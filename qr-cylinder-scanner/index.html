@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Cylinder QR Scanner</title>
+<style>
+  :root {
+    --accent: #30d158;
+    --bg: #000;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+
+  #stage { position: fixed; inset: 0; }
+  #video {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  #startScreen {
+    position: fixed; inset: 0; z-index: 20; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 24px; text-align: center;
+  }
+  #startScreen h1 { font-size: 22px; font-weight: 700; }
+  #startScreen p { font-size: 14px; color: #aaa; max-width: 320px; line-height: 1.5; }
+  #startBtn {
+    font-size: 18px; font-weight: 600; color: #000; background: var(--accent);
+    border: none; border-radius: 14px; padding: 14px 40px; margin-top: 8px;
+  }
+  #httpsWarn { color: #ff9f0a; font-size: 13px; display: none; }
+
+  /* Unwarped strip preview */
+  #previewWrap {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: calc(150px + env(safe-area-inset-bottom));
+    width: min(86vw, 460px); z-index: 5;
+    background: rgba(0,0,0,.55); border-radius: 10px; padding: 6px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #previewWrap .lbl { font-size: 10px; color: #9a9a9a; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+  #preview { width: 100%; height: auto; display: block; border-radius: 6px; background: #111; }
+
+  /* Controls */
+  #controls {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, rgba(0,0,0,.75) 30%);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row label { font-size: 12px; color: #ccc; width: 76px; flex: none; }
+  .row output { font-size: 12px; color: #ccc; width: 44px; flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { flex: 1; accent-color: var(--accent); height: 28px; }
+  .pillBtn {
+    font-size: 13px; font-weight: 600; color: #fff; background: rgba(255,255,255,.16);
+    border: none; border-radius: 999px; padding: 8px 14px;
+  }
+  .pillBtn.active { background: var(--accent); color: #000; }
+  #status {
+    font-size: 12px; color: #9a9a9a; text-align: center; min-height: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Result sheet */
+  #result {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: #1c1c1e; border-radius: 18px 18px 0 0;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(105%); transition: transform .25s ease;
+    box-shadow: 0 -8px 40px rgba(0,0,0,.6);
+  }
+  #result.show { transform: translateY(0); }
+  #result h2 { font-size: 13px; color: #8e8e93; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  #resultText {
+    font-size: 16px; word-break: break-all; line-height: 1.45;
+    max-height: 30vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #resultText a { color: #6ea8fe; }
+  #result .btns { display: flex; gap: 10px; margin-top: 16px; }
+  #result .btns button {
+    flex: 1; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; padding: 12px;
+  }
+  #copyBtn { background: rgba(255,255,255,.14); color: #fff; }
+  #againBtn { background: var(--accent); color: #000; }
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>Cylinder QR Scanner</h1>
+  <p>Reads QR codes wrapped around small cylinders (≈1.6&nbsp;cm vials/tubes) by digitally un-curving the label in real time.</p>
+  <p>Hold the cylinder <b>upright</b> and line its left/right edges up with the two green guide lines. Keep it <b>12–15&nbsp;cm</b> from the camera — closer than ~10&nbsp;cm the iPhone cannot focus — and use the <b>zoom slider (2–3×)</b> to fill the frame. The bottom preview strip must show crisp, separated squares.</p>
+  <p id="httpsWarn">⚠️ Camera access requires HTTPS (or localhost). Serve this page over HTTPS.</p>
+  <button id="startBtn">Start camera</button>
+</div>
+
+<div id="stage">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="overlay"></canvas>
+
+  <div id="previewWrap">
+    <div class="lbl">Un-curved view (what the decoder sees)</div>
+    <canvas id="preview"></canvas>
+  </div>
+
+  <div id="controls">
+    <div id="status"></div>
+    <div class="row">
+      <label for="curveSlider">Curvature</label>
+      <input type="range" id="curveSlider" min="0" max="85" step="1" value="60" disabled>
+      <output id="curveOut">auto</output>
+      <button class="pillBtn active" id="autoBtn">Auto</button>
+    </div>
+    <div class="row" id="zoomRow" hidden>
+      <label for="zoomSlider">Zoom</label>
+      <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
+      <output id="zoomOut">1.0×</output>
+      <button class="pillBtn" id="torchBtn" hidden>Torch</button>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="pillBtn" id="saveBtn">Save debug frame</button>
+    </div>
+  </div>
+</div>
+
+<div id="debugOverlay" style="display:none; position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.92); flex-direction:column; gap:14px; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <b style="font-size:15px;">Debug frames</b>
+    <button id="dbgClose" class="pillBtn">Close</button>
+  </div>
+  <p style="font-size:13px; color:#9a9a9a; line-height:1.5;">Long-press an image → <b style="color:#fff;">Save to Photos</b> (or take a screenshot). The flattened strip is exactly what the decoder saw.</p>
+  <div>
+    <div style="font-size:11px; color:#9a9a9a; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Raw camera crop</div>
+    <img id="dbgRaw" alt="raw ROI" style="width:100%; border-radius:8px; background:#111;">
+  </div>
+  <div>
+    <div style="font-size:11px; color:#9a9a9a; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Flattened (what the decoder sees)</div>
+    <img id="dbgFlat" alt="flattened strip" style="width:100%; border-radius:8px; background:#111;">
+  </div>
+</div>
+
+<div id="result">
+  <h2>QR code detected</h2>
+  <div id="resultText"></div>
+  <div class="btns">
+    <button id="copyBtn">Copy</button>
+    <button id="againBtn">Scan again</button>
+  </div>
+</div>
+
+<script src="vendor/jsQR.js"></script>
+<script src="unwarp.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
