@@ -66,6 +66,21 @@ function computeColumnMap(thetaMax: number, widthFactor: number, roiW: number): 
   return { map, outW };
 }
 
+/** Unsharp mask on a grayscale buffer — recovers mildly defocused frames
+ * (the iPhone main camera can't focus closer than ~10-12 cm). */
+function sharpenGray(gray: Uint8ClampedArray, w: number, h: number, k = 0.6): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) { out[i] = gray[i]; continue; }
+      out[i] = (1 + 4 * k) * gray[i] -
+               k * (gray[i - 1] + gray[i + 1] + gray[i - w] + gray[i + w]);
+    }
+  }
+  return out;
+}
+
 /** Luma from RGBA pixel data. */
 function toGray(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
   const g = new Uint8ClampedArray(width * height);
@@ -122,6 +137,17 @@ export default function CylinderQRScanner() {
   const audioRef = useRef<AudioContext | null>(null);
   const rafRef = useRef(0);
   const roiCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const flatCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const decodeBusyRef = useRef(false);
+  // Native decoder (hardware-grade; far more tolerant of blur/density than
+  // jsQR). Not exposed by all iOS Safari versions — feature-detected.
+  const nativeDetectorRef = useRef<any>(undefined);
+  if (nativeDetectorRef.current === undefined) {
+    nativeDetectorRef.current = null;
+    if ("BarcodeDetector" in window) {
+      try { nativeDetectorRef.current = new (window as any).BarcodeDetector({ formats: ["qr_code"] }); } catch { /* unsupported */ }
+    }
+  }
 
   // Mutable scan-loop state kept in refs so the rAF loop never goes stale.
   const scan = useRef({
@@ -220,7 +246,7 @@ export default function CylinderQRScanner() {
     octx.textAlign = "center";
     octx.fillText("Align cylinder edges with green lines", bD.x + bD.w / 2, bD.y - 22);
 
-    if (now - s.lastScanTime < SCAN_INTERVAL_MS) return;
+    if (decodeBusyRef.current || now - s.lastScanTime < SCAN_INTERVAL_MS) return;
     s.lastScanTime = now;
 
     // 1) grab guide-box region
@@ -246,29 +272,68 @@ export default function CylinderQRScanner() {
       s.profileIdx = (s.profileIdx + 1) % PROFILES.length;
     }
 
-    // 3) flatten + decode
+    // 3-4) flatten + decode + feedback. Async because the native
+    // BarcodeDetector is; the busy flag stops overlapping attempts.
+    decodeBusyRef.current = true;
+    decodeFrame(img, roiW, roiH, prof)
+      .catch(() => {})
+      .finally(() => { decodeBusyRef.current = false; });
+  }, [onDecoded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function decodeFrame(img: ImageData, roiW: number, roiH: number, prof: Profile) {
+    const s = scan.current;
     const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = toGray(img.data, roiW, roiH);
-    const rgba = unwarpColumns(gray, roiW, roiH, map, outW);
+    let rgba = unwarpColumns(gray, roiW, roiH, map, outW);
     s.attempts++;
-    const code = jsQR(rgba, outW, roiH, { inversionAttempts: "attemptBoth" });
 
-    // 4) feedback
+    let text: string | null = null;
+    let loc: any = null;
+
+    // Draw the flattened strip to a canvas: the native detector consumes it,
+    // and the debug-frame export reuses it.
+    if (!flatCanvasRef.current) flatCanvasRef.current = document.createElement("canvas");
+    const flatCanvas = flatCanvasRef.current;
+    if (flatCanvas.width !== outW || flatCanvas.height !== roiH) { flatCanvas.width = outW; flatCanvas.height = roiH; }
+    const fctx = flatCanvas.getContext("2d")!;
+    // Cast: some TS DOM libs type ImageData's param as Uint8ClampedArray<ArrayBuffer>
+    fctx.putImageData(new ImageData(rgba as never, outW, roiH), 0, 0);
+
+    // Native decoder first — hardware-grade, handles dense/soft codes that
+    // jsQR cannot.
+    if (nativeDetectorRef.current) {
+      try {
+        const found = await nativeDetectorRef.current.detect(flatCanvas);
+        if (found?.length && found[0].rawValue) text = found[0].rawValue;
+      } catch {
+        nativeDetectorRef.current = null; // exposed but non-functional
+      }
+    }
+
+    if (!text) {
+      let code = jsQR(rgba, outW, roiH, { inversionAttempts: "attemptBoth" });
+      if (!code) {
+        // Retry sharpened — recovers mildly defocused frames.
+        const sharp = unwarpColumns(sharpenGray(gray, roiW, roiH), roiW, roiH, map, outW);
+        code = jsQR(sharp, outW, roiH, { inversionAttempts: "attemptBoth" });
+        if (code) rgba = sharp;
+      }
+      if (code?.data) { text = code.data; loc = code.location; }
+    }
+
     const preview = previewRef.current;
     if (preview) {
       if (preview.width !== outW || preview.height !== roiH) { preview.width = outW; preview.height = roiH; }
       const pctx = preview.getContext("2d")!;
-      // Cast: some TS DOM libs type ImageData's param as Uint8ClampedArray<ArrayBuffer>
       pctx.putImageData(new ImageData(rgba as never, outW, roiH), 0, 0);
-      if (code?.location) {
-        const L = code.location;
+      if (loc) {
         pctx.strokeStyle = "#30d158";
         pctx.lineWidth = Math.max(2, outW / 150);
         pctx.beginPath();
-        pctx.moveTo(L.topLeftCorner.x, L.topLeftCorner.y);
-        pctx.lineTo(L.topRightCorner.x, L.topRightCorner.y);
-        pctx.lineTo(L.bottomRightCorner.x, L.bottomRightCorner.y);
-        pctx.lineTo(L.bottomLeftCorner.x, L.bottomLeftCorner.y);
+        pctx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
+        pctx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
+        pctx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
+        pctx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
         pctx.closePath();
         pctx.stroke();
       }
@@ -277,16 +342,42 @@ export default function CylinderQRScanner() {
     if (statusRef.current) {
       statusRef.current.textContent =
         (s.manual ? `manual ${deg}°` : s.sticky ? `locked ${deg}°` : `sweeping… ${deg}°`) +
-        ` · attempt ${s.attempts}`;
+        ` · attempt ${s.attempts}` +
+        (nativeDetectorRef.current ? " · native+jsQR" : " · jsQR only");
     }
 
-    if (code?.data) {
+    if (text) {
       if (!s.manual) { s.sticky = prof; s.stickyFails = 0; }
-      onDecoded(code.data);
+      onDecoded(text);
     } else if (s.sticky) {
       s.stickyFails++;
     }
-  }, [onDecoded]);
+  }
+
+  /** Export the current raw ROI + flattened strip (share sheet on iOS,
+   * downloads elsewhere) — for diagnosing why frames fail to decode. */
+  const saveDebugFrame = async () => {
+    const roiCanvas = roiCanvasRef.current, flatCanvas = flatCanvasRef.current;
+    if (!roiCanvas?.width || !flatCanvas?.width) return;
+    const toFile = (canvas: HTMLCanvasElement, name: string) =>
+      new Promise<File | null>((res) =>
+        canvas.toBlob((b) => res(b && new File([b], name, { type: "image/png" })), "image/png"));
+    const files = (await Promise.all([
+      toFile(roiCanvas, "roi-raw.png"),
+      toFile(flatCanvas, "roi-flattened.png"),
+    ])).filter((f): f is File => !!f);
+    if (!files.length) return;
+    if (navigator.canShare?.({ files })) {
+      try { await navigator.share({ files, title: "QR scanner debug frames" }); return; } catch { /* fall through */ }
+    }
+    for (const f of files) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+  };
 
   const startScanning = () => {
     scan.current.running = true;
@@ -362,7 +453,9 @@ export default function CylinderQRScanner() {
           </p>
           <p className="text-sm text-neutral-400 max-w-xs leading-relaxed">
             Hold the cylinder <b className="text-white">upright</b>, align its left/right edges with
-            the two green guide lines, keep it 7–10&nbsp;cm away and zoom to fill the frame.
+            the two green guide lines. Keep it <b className="text-white">12–15&nbsp;cm</b> away —
+            closer than ~10&nbsp;cm the camera cannot focus — and use <b className="text-white">zoom
+            (2–3×)</b> to fill the frame. The preview strip must show crisp, separated squares.
           </p>
           {!window.isSecureContext && (
             <p className="text-sm text-amber-400">⚠️ Camera access requires HTTPS.</p>
@@ -415,6 +508,14 @@ export default function CylinderQRScanner() {
               }`}
             >
               Auto
+            </button>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={saveDebugFrame}
+              className="rounded-full bg-white/15 px-3.5 py-2 text-[13px] font-semibold text-white"
+            >
+              Save debug frame
             </button>
           </div>
           {(zoomCaps || hasTorch) && (

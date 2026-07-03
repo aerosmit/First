@@ -70,7 +70,24 @@
     return out;
   }
 
-  const api = { computeColumnMap, toGray, unwarpColumns };
+  // Unsharp mask on a grayscale buffer — recovers mildly defocused frames
+  // (the iPhone main camera can't focus closer than ~10-12 cm, so close-up
+  // frames are often slightly soft). Borders are copied unmodified.
+  function sharpenGray(gray, w, h, amount) {
+    const k = amount === undefined ? 0.6 : amount;
+    const out = new Uint8ClampedArray(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (x === 0 || y === 0 || x === w - 1 || y === h - 1) { out[i] = gray[i]; continue; }
+        out[i] = (1 + 4 * k) * gray[i] -
+                 k * (gray[i - 1] + gray[i + 1] + gray[i - w] + gray[i + w]);
+      }
+    }
+    return out;
+  }
+
+  const api = { computeColumnMap, toGray, unwarpColumns, sharpenGray };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else global.CylUnwarp = api;
 })(typeof self !== 'undefined' ? self : this);

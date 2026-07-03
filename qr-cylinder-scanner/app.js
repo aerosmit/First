@@ -68,6 +68,7 @@
   let stream = null, track = null;
   let scanning = false;
   let lastScanTime = 0;
+  let decodeBusy = false;
   let profileIdx = 0;          // sweep cursor
   let stickyProfile = null;    // last profile that decoded successfully
   let stickyFails = 0;
@@ -78,6 +79,15 @@
 
   const roiCanvas = document.createElement('canvas'); // hidden source ROI
   const rctx = roiCanvas.getContext('2d', { willReadFrequently: true });
+  const flatCanvas = document.createElement('canvas'); // flattened strip (native detect + debug export)
+  const fctx = flatCanvas.getContext('2d');
+
+  // Native decoder (hardware-grade; far more tolerant of blur/density than
+  // jsQR). Not exposed by all iOS Safari versions — feature-detected.
+  let nativeDetector = null;
+  if ('BarcodeDetector' in window) {
+    try { nativeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (_) {}
+  }
 
   // Cache of column maps keyed by profile+dimensions
   const mapCache = new Map();
@@ -261,7 +271,7 @@
     const box = guideBox(m);
     drawOverlay(box.display);
 
-    if (now - lastScanTime < SCAN_INTERVAL_MS) return;
+    if (decodeBusy || now - lastScanTime < SCAN_INTERVAL_MS) return;
     lastScanTime = now;
 
     // 1. Grab the guide-box region of the frame.
@@ -279,30 +289,92 @@
       return; // canvas not ready yet
     }
 
-    // 2. Flatten with the current curvature hypothesis.
-    const prof = currentProfile();
+    // 2-4. Flatten with the current curvature hypothesis and decode.
+    // Async because the native BarcodeDetector is; the busy flag stops
+    // overlapping attempts.
+    decodeBusy = true;
+    decodeFrame(img, roiW, roiH, currentProfile())
+      .catch(() => {})
+      .finally(() => { decodeBusy = false; });
+  }
+
+  async function decodeFrame(img, roiW, roiH, prof) {
     const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = CylUnwarp.toGray(img.data, roiW, roiH);
-    const rgba = CylUnwarp.unwarpColumns(gray, roiW, roiH, map, outW);
+    let rgba = CylUnwarp.unwarpColumns(gray, roiW, roiH, map, outW);
     attempts++;
 
-    // 3. Decode.
-    const code = jsQR(rgba, outW, roiH, { inversionAttempts: 'attemptBoth' });
+    let text = null, loc = null;
 
-    // 4. Feedback.
-    drawPreview(rgba, outW, roiH, code);
+    // Draw the flattened strip to a canvas: the native detector consumes it,
+    // and the debug-frame export reuses it.
+    if (flatCanvas.width !== outW || flatCanvas.height !== roiH) {
+      flatCanvas.width = outW; flatCanvas.height = roiH;
+    }
+    fctx.putImageData(new ImageData(rgba, outW, roiH), 0, 0);
+
+    // Native decoder first — hardware-grade, handles dense/soft codes that
+    // jsQR cannot.
+    if (nativeDetector) {
+      try {
+        const found = await nativeDetector.detect(flatCanvas);
+        if (found && found.length && found[0].rawValue) text = found[0].rawValue;
+      } catch (_) {
+        nativeDetector = null; // exposed but non-functional; fall back for good
+      }
+    }
+
+    if (!text) {
+      let code = jsQR(rgba, outW, roiH, { inversionAttempts: 'attemptBoth' });
+      if (!code) {
+        // Retry sharpened — recovers mildly defocused frames.
+        const sharp = CylUnwarp.unwarpColumns(
+          CylUnwarp.sharpenGray(gray, roiW, roiH), roiW, roiH, map, outW);
+        code = jsQR(sharp, outW, roiH, { inversionAttempts: 'attemptBoth' });
+        if (code) rgba = sharp;
+      }
+      if (code && code.data) { text = code.data; loc = code.location; }
+    }
+
+    drawPreview(rgba, outW, roiH, loc);
     const deg = Math.round(prof.thetaMax * 180 / Math.PI);
     statusEl.textContent =
       (manualMode ? `manual ${deg}°` : stickyProfile ? `locked ${deg}°` : `sweeping… ${deg}°`) +
-      ` · attempt ${attempts}`;
+      ` · attempt ${attempts}` +
+      (nativeDetector ? ' · native+jsQR' : ' · jsQR only');
 
-    if (code && code.data) {
+    if (text) {
       if (!manualMode) { stickyProfile = prof; stickyFails = 0; }
-      showResult(code.data);
+      showResult(text);
     } else if (stickyProfile) {
       stickyFails++;
     }
   }
+
+  // Export the current raw ROI and flattened strip — for diagnosing why
+  // frames fail to decode. Uses the share sheet where available (iOS), plain
+  // downloads elsewhere.
+  async function saveDebugFrame() {
+    if (!flatCanvas.width || !roiCanvas.width) return;
+    const toFile = (canvas, name) => new Promise((res) =>
+      canvas.toBlob((b) => res(b && new File([b], name, { type: 'image/png' })), 'image/png'));
+    const files = (await Promise.all([
+      toFile(roiCanvas, 'roi-raw.png'),
+      toFile(flatCanvas, 'roi-flattened.png'),
+    ])).filter(Boolean);
+    if (!files.length) return;
+    if (navigator.canShare && navigator.canShare({ files })) {
+      try { await navigator.share({ files, title: 'QR scanner debug frames' }); return; } catch (_) {}
+    }
+    for (const f of files) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+  }
+  document.getElementById('saveBtn').addEventListener('click', saveDebugFrame);
 
   function drawOverlay(b) {
     const dpr = devicePixelRatio;
@@ -344,13 +416,13 @@
     octx.fillText('Align cylinder edges with green lines', b.x + b.w / 2, b.y - 22);
   }
 
-  function drawPreview(rgba, w, h, code) {
+  function drawPreview(rgba, w, h, loc) {
     if (preview.width !== w || preview.height !== h) {
       preview.width = w; preview.height = h;
     }
     pctx.putImageData(new ImageData(rgba, w, h), 0, 0);
-    if (code && code.location) {
-      const L = code.location;
+    if (loc) {
+      const L = loc;
       pctx.strokeStyle = '#30d158';
       pctx.lineWidth = Math.max(2, w / 150);
       pctx.beginPath();

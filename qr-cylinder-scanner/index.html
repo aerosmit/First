@@ -94,7 +94,7 @@
 <div id="startScreen">
   <h1>Cylinder QR Scanner</h1>
   <p>Reads QR codes wrapped around small cylinders (≈1.6&nbsp;cm vials/tubes) by digitally un-curving the label in real time.</p>
-  <p>Hold the cylinder <b>upright</b> and line its left/right edges up with the two green guide lines. Keep it 7–10&nbsp;cm from the camera and use the zoom slider to fill the frame.</p>
+  <p>Hold the cylinder <b>upright</b> and line its left/right edges up with the two green guide lines. Keep it <b>12–15&nbsp;cm</b> from the camera — closer than ~10&nbsp;cm the iPhone cannot focus — and use the <b>zoom slider (2–3×)</b> to fill the frame. The bottom preview strip must show crisp, separated squares.</p>
   <p id="httpsWarn">⚠️ Camera access requires HTTPS (or localhost). Serve this page over HTTPS.</p>
   <button id="startBtn">Start camera</button>
 </div>
@@ -121,6 +121,9 @@
       <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
       <output id="zoomOut">1.0×</output>
       <button class="pillBtn" id="torchBtn" hidden>Torch</button>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="pillBtn" id="saveBtn">Save debug frame</button>
     </div>
   </div>
 </div>
