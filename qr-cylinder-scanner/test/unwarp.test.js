@@ -132,6 +132,101 @@ function buildProfiles() {
   return profiles;
 }
 
+/*
+ * Dense QR matched to a real 2 ml vial label (measured from user photos):
+ * 45x45 modules (version 7), QR edges at ~±43° around the cylinder.
+ * Encodes a pharma-style serial payload.
+ */
+const EXPECTED_DENSE = 'https://verify.example.com/v?lot=10825&sn=BPC157-0341-99.81&exp=2027-05';
+const QR_ROWS_DENSE = [
+  '111111101011110011000000011100101000101111111',
+  '100000100010010011010001101000010101001000001',
+  '101110100011010111101110111001100101001011101',
+  '101110101011100000111101001101011101101011101',
+  '101110101111111010111111100001110011101011101',
+  '100000101110000110111000111010100100001000001',
+  '111111101010101010101010101010101010101111111',
+  '000000001111011100001000100000110011000000000',
+  '100010111101100100101111111100011010111111001',
+  '100100011101011001101110101101001101011111100',
+  '111001111101101110100100101001000101111111010',
+  '100011000101110100111001100011000110101011000',
+  '010010100101010011110001011001111111011001010',
+  '011101010001100110000001110100110101111100101',
+  '111011111010001101010011001110001101111111000',
+  '000110011110001101000110011110111110001000010',
+  '101000100110001001001100110110001101001101011',
+  '011110010111110100011111100011110001110001011',
+  '001110100110101001000000000001110010101101110',
+  '000000010111110000011010100111010000111000101',
+  '100111111010101110111111101011011010111110110',
+  '110110001000100011111000111010001110100011100',
+  '101010101010001000111010110101100110101011010',
+  '011010001111011011111000111101000010100010011',
+  '101011111001111011001111111101100100111111000',
+  '100110000011010110100010001100110101010001010',
+  '010110110111011001101101101110011000011110010',
+  '011100001011111110111110011110100001000111001',
+  '111110101001001010100000011110010010110111010',
+  '110100010111000001111001001011011000110100111',
+  '000011110000100111101110001001000001000111011',
+  '110100001010001011100011000010001000001111101',
+  '101111101000000011011001101001101010011001000',
+  '010010001111001101110100111101101110010110100',
+  '000010100110100010110001010110101111000100010',
+  '011110011001001110111100111011000110011001000',
+  '100110101100100001101111110011000100111111111',
+  '000000001010011110011000100110010001100011110',
+  '111111101110111111001010100111111010101011010',
+  '100000100110000111011000110100110110100010000',
+  '101110101011000100011111101100011011111111000',
+  '101110100011001101010110011001001101110100110',
+  '101110100111011010001110101101000101000110000',
+  '100000100010100100001000110011001000001111000',
+  '111111101100011010011100000001111100110101001',
+];
+
+// Rasterize an arbitrary bit-matrix (shared shape with rasterizeQR).
+function rasterizeMatrix(rows, scale, quietModules) {
+  const n = rows.length;
+  const size = (n + 2 * quietModules) * scale;
+  const img = new Uint8ClampedArray(size * size).fill(255);
+  for (let my = 0; my < n; my++) {
+    for (let mx = 0; mx < n; mx++) {
+      if (rows[my][mx] !== '1') continue;
+      const x0 = (mx + quietModules) * scale;
+      const y0 = (my + quietModules) * scale;
+      for (let y = y0; y < y0 + scale; y++) {
+        img.fill(0, y * size + x0, y * size + x0 + scale);
+      }
+    }
+  }
+  return { img, size };
+}
+
+// Separable box blur (approximates camera defocus at close range).
+function boxBlur(img, w, h, r) {
+  if (!r) return img;
+  const tmp = new Float32Array(w * h);
+  const out = new Uint8ClampedArray(w * h);
+  const win = 2 * r + 1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += img[y * w + Math.max(0, Math.min(w - 1, x + k))];
+      tmp[y * w + x] = s / win;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += tmp[Math.max(0, Math.min(h - 1, y + k)) * w + x];
+      out[y * w + x] = s / win;
+    }
+  }
+  return out;
+}
+
 // ---------- test ----------
 
 let failures = 0;
@@ -171,6 +266,31 @@ for (const wrapDeg of [45, 65, 78]) {
         hitProfile
           ? `decoded with thetaMax=${Math.round(hitProfile.thetaMax * 180 / Math.PI)}°, wf=${hitProfile.widthFactor}`
           : 'no profile decoded');
+}
+
+// ---- Dense-label scenario matched to the user's real vial photos ----
+// 45-module QR, edges at ~±43°, ~10 px/module at the label center (roughly
+// what the app's 560 px ROI yields from a 1080p portrait frame), with and
+// without defocus blur.
+for (const wrapDeg of [43, 60]) {
+  for (const blur of [0, 2]) {
+    console.log(`\nDense v7 label, wrap ±${wrapDeg}°, defocus blur r=${blur}:`);
+    const { img: flat, size } = rasterizeMatrix(QR_ROWS_DENSE, 10, 4);
+    const warped = warpOntoCylinder(flat, size, size, wrapDeg);
+    const blurred = boxBlur(warped.img, warped.w, warped.h, blur);
+
+    let decoded = null, hitProfile = null;
+    for (const prof of buildProfiles()) {
+      const { map, outW } = computeColumnMap(prof.thetaMax, prof.widthFactor, warped.w);
+      const rgba = unwarpColumns(blurred, warped.w, warped.h, map, outW);
+      const code = jsQR(rgba, outW, warped.h, { inversionAttempts: 'dontInvert' });
+      if (code && code.data === EXPECTED_DENSE) { decoded = code.data; hitProfile = prof; break; }
+    }
+    check('sweep recovers dense QR content', decoded === EXPECTED_DENSE,
+          hitProfile
+            ? `decoded with thetaMax=${Math.round(hitProfile.thetaMax * 180 / Math.PI)}°, wf=${hitProfile.widthFactor}`
+            : 'no profile decoded');
+  }
 }
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nAll checks passed');
