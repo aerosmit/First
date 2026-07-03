@@ -128,6 +128,22 @@
   </div>
 </div>
 
+<div id="debugOverlay" style="display:none; position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.92); flex-direction:column; gap:14px; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <b style="font-size:15px;">Debug frames</b>
+    <button id="dbgClose" class="pillBtn">Close</button>
+  </div>
+  <p style="font-size:13px; color:#9a9a9a; line-height:1.5;">Long-press an image → <b style="color:#fff;">Save to Photos</b> (or take a screenshot). The flattened strip is exactly what the decoder saw.</p>
+  <div>
+    <div style="font-size:11px; color:#9a9a9a; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Raw camera crop</div>
+    <img id="dbgRaw" alt="raw ROI" style="width:100%; border-radius:8px; background:#111;">
+  </div>
+  <div>
+    <div style="font-size:11px; color:#9a9a9a; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Flattened (what the decoder sees)</div>
+    <img id="dbgFlat" alt="flattened strip" style="width:100%; border-radius:8px; background:#111;">
+  </div>
+</div>
+
 <div id="result">
   <h2>QR code detected</h2>
   <div id="resultText"></div>

@@ -352,29 +352,46 @@
   }
 
   // Export the current raw ROI and flattened strip — for diagnosing why
-  // frames fail to decode. Uses the share sheet where available (iOS), plain
-  // downloads elsewhere.
-  async function saveDebugFrame() {
+  // frames fail to decode.
+  //
+  // Everything up to the share() call must run synchronously in the tap
+  // handler: iOS Safari drops the user-activation grant across async waits
+  // (canvas.toBlob), which made the share sheet silently never open. Capture
+  // via toDataURL (synchronous) instead, and if the share sheet still isn't
+  // available, show the images in an overlay the user can long-press to save.
+  function fileFromDataURL(dataURL, name) {
+    const b64 = dataURL.split(',')[1];
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new File([bytes], name, { type: 'image/png' });
+  }
+
+  function saveDebugFrame() {
     if (!flatCanvas.width || !roiCanvas.width) return;
-    const toFile = (canvas, name) => new Promise((res) =>
-      canvas.toBlob((b) => res(b && new File([b], name, { type: 'image/png' })), 'image/png'));
-    const files = (await Promise.all([
-      toFile(roiCanvas, 'roi-raw.png'),
-      toFile(flatCanvas, 'roi-flattened.png'),
-    ])).filter(Boolean);
-    if (!files.length) return;
-    if (navigator.canShare && navigator.canShare({ files })) {
-      try { await navigator.share({ files, title: 'QR scanner debug frames' }); return; } catch (_) {}
+    const rawURL = roiCanvas.toDataURL('image/png');
+    const flatURL = flatCanvas.toDataURL('image/png');
+    const files = [
+      fileFromDataURL(rawURL, 'roi-raw.png'),
+      fileFromDataURL(flatURL, 'roi-flattened.png'),
+    ];
+    if (navigator.canShare && navigator.canShare({ files }) && navigator.share) {
+      navigator.share({ files, title: 'QR scanner debug frames' })
+        .catch((e) => { if (e && e.name !== 'AbortError') showDebugOverlay(rawURL, flatURL); });
+      return;
     }
-    for (const f of files) {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(f);
-      a.download = f.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    }
+    showDebugOverlay(rawURL, flatURL);
   }
   document.getElementById('saveBtn').addEventListener('click', saveDebugFrame);
+
+  function showDebugOverlay(rawURL, flatURL) {
+    document.getElementById('dbgRaw').src = rawURL;
+    document.getElementById('dbgFlat').src = flatURL;
+    document.getElementById('debugOverlay').style.display = 'flex';
+  }
+  document.getElementById('dbgClose').addEventListener('click', () => {
+    document.getElementById('debugOverlay').style.display = 'none';
+  });
 
   function drawOverlay(b) {
     const dpr = devicePixelRatio;

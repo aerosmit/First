@@ -126,6 +126,7 @@ export default function CylinderQRScanner() {
   const [hasTorch, setHasTorch] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [debugShots, setDebugShots] = useState<{ raw: string; flat: string } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -354,29 +355,32 @@ export default function CylinderQRScanner() {
     }
   }
 
-  /** Export the current raw ROI + flattened strip (share sheet on iOS,
-   * downloads elsewhere) — for diagnosing why frames fail to decode. */
-  const saveDebugFrame = async () => {
+  /** Export the current raw ROI + flattened strip — for diagnosing why
+   * frames fail to decode.
+   *
+   * Everything up to the share() call must run synchronously in the tap
+   * handler: iOS Safari drops the user-activation grant across async waits
+   * (canvas.toBlob), which made the share sheet silently never open. Capture
+   * via toDataURL (synchronous) instead, and if the share sheet still isn't
+   * available, show the images in an overlay the user can long-press to save. */
+  const saveDebugFrame = () => {
     const roiCanvas = roiCanvasRef.current, flatCanvas = flatCanvasRef.current;
     if (!roiCanvas?.width || !flatCanvas?.width) return;
-    const toFile = (canvas: HTMLCanvasElement, name: string) =>
-      new Promise<File | null>((res) =>
-        canvas.toBlob((b) => res(b && new File([b], name, { type: "image/png" })), "image/png"));
-    const files = (await Promise.all([
-      toFile(roiCanvas, "roi-raw.png"),
-      toFile(flatCanvas, "roi-flattened.png"),
-    ])).filter((f): f is File => !!f);
-    if (!files.length) return;
-    if (navigator.canShare?.({ files })) {
-      try { await navigator.share({ files, title: "QR scanner debug frames" }); return; } catch { /* fall through */ }
+    const rawURL = roiCanvas.toDataURL("image/png");
+    const flatURL = flatCanvas.toDataURL("image/png");
+    const fileFromDataURL = (dataURL: string, name: string) => {
+      const bin = atob(dataURL.split(",")[1]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new File([bytes], name, { type: "image/png" });
+    };
+    const files = [fileFromDataURL(rawURL, "roi-raw.png"), fileFromDataURL(flatURL, "roi-flattened.png")];
+    if (navigator.canShare?.({ files }) && navigator.share) {
+      navigator.share({ files, title: "QR scanner debug frames" })
+        .catch((e) => { if (e?.name !== "AbortError") setDebugShots({ raw: rawURL, flat: flatURL }); });
+      return;
     }
-    for (const f of files) {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(f);
-      a.download = f.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    }
+    setDebugShots({ raw: rawURL, flat: flatURL });
   };
 
   const startScanning = () => {
@@ -547,6 +551,36 @@ export default function CylinderQRScanner() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* debug frames overlay (long-press images to save on iOS) */}
+      {debugShots && (
+        <div
+          className="fixed inset-0 z-40 flex flex-col gap-3.5 overflow-y-auto bg-black/95 px-4 pt-5"
+          style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex items-center justify-between">
+            <b className="text-[15px]">Debug frames</b>
+            <button
+              onClick={() => setDebugShots(null)}
+              className="rounded-full bg-white/15 px-3.5 py-2 text-[13px] font-semibold"
+            >
+              Close
+            </button>
+          </div>
+          <p className="text-[13px] leading-relaxed text-neutral-400">
+            Long-press an image → <b className="text-white">Save to Photos</b> (or take a
+            screenshot). The flattened strip is exactly what the decoder saw.
+          </p>
+          <div>
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-neutral-400">Raw camera crop</div>
+            <img src={debugShots.raw} alt="raw ROI" className="w-full rounded-lg bg-neutral-900" />
+          </div>
+          <div>
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-neutral-400">Flattened (what the decoder sees)</div>
+            <img src={debugShots.flat} alt="flattened strip" className="w-full rounded-lg bg-neutral-900" />
+          </div>
         </div>
       )}
 
