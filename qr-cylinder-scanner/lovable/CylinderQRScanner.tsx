@@ -35,13 +35,19 @@ let zxingBroken = false; // set if the wasm fails to load; degrade gracefully
 
 // ---------------- pure geometry helpers ----------------
 
-type Profile = { thetaMax: number; widthFactor: number };
+type Profile = { thetaMax: number; widthFactor: number; offset: number };
 type ColumnMap = { map: Float32Array; outW: number };
 
-const PROFILES: Profile[] = [{ thetaMax: 0, widthFactor: 1 }];
-for (const deg of [40, 55, 66, 75, 82]) {
-  for (const wf of [1.0, 0.93, 1.08]) {
-    PROFILES.push({ thetaMax: (deg * Math.PI) / 180, widthFactor: wf });
+// The raw frame goes to native + ZXing every attempt, so the flatten sweep
+// focuses on strong-curvature hypotheses, including off-center codes (offset
+// = lateral shift of the assumed cylinder centerline, as a fraction of ROI
+// width) and vials wider than the guide box (widthFactor > 1).
+const PROFILES: Profile[] = [{ thetaMax: 0, widthFactor: 1, offset: 0 }];
+for (const deg of [45, 60, 72]) {
+  for (const wf of [1.0, 1.15, 1.3]) {
+    for (const off of [0, 0.12, -0.12]) {
+      PROFILES.push({ thetaMax: (deg * Math.PI) / 180, widthFactor: wf, offset: off });
+    }
   }
 }
 
@@ -53,7 +59,7 @@ const BOX_W_FRAC = 0.64; // guide box fraction of visible frame width
 const BOX_H_FRAC = 0.34;
 
 /** Column resample map for the cylindrical unwarp. map[i] = fractional source x. */
-function computeColumnMap(thetaMax: number, widthFactor: number, roiW: number): ColumnMap {
+function computeColumnMap(thetaMax: number, widthFactor: number, roiW: number, offsetFrac = 0): ColumnMap {
   if (thetaMax === 0) {
     const map = new Float32Array(roiW);
     for (let i = 0; i < roiW; i++) map[i] = i;
@@ -61,7 +67,7 @@ function computeColumnMap(thetaMax: number, widthFactor: number, roiW: number): 
   }
   const outW = Math.round((roiW * thetaMax) / Math.sin(thetaMax));
   const map = new Float32Array(outW);
-  const cx = (roiW - 1) / 2;
+  const cx = (roiW - 1) / 2 + offsetFrac * roiW;
   const halfW = ((roiW - 1) / 2) * widthFactor;
   for (let i = 0; i < outW; i++) {
     const u = (i / (outW - 1)) * 2 - 1; // -1..1 across the flattened label
@@ -190,10 +196,10 @@ export default function CylinderQRScanner() {
   scan.current.manualDeg = curveDeg;
 
   const mapCache = useRef(new Map<string, ColumnMap>());
-  const getColumnMap = (thetaMax: number, widthFactor: number, roiW: number): ColumnMap => {
-    const key = `${thetaMax.toFixed(4)}|${widthFactor}|${roiW}`;
+  const getColumnMap = (thetaMax: number, widthFactor: number, roiW: number, offsetFrac = 0): ColumnMap => {
+    const key = `${thetaMax.toFixed(4)}|${widthFactor}|${roiW}|${offsetFrac}`;
     let e = mapCache.current.get(key);
-    if (!e) { e = computeColumnMap(thetaMax, widthFactor, roiW); mapCache.current.set(key, e); }
+    if (!e) { e = computeColumnMap(thetaMax, widthFactor, roiW, offsetFrac); mapCache.current.set(key, e); }
     return e;
   };
 
@@ -303,7 +309,7 @@ export default function CylinderQRScanner() {
     // 2) pick curvature hypothesis
     let prof: Profile;
     if (s.manual) {
-      prof = { thetaMax: (s.manualDeg * Math.PI) / 180, widthFactor: 1 };
+      prof = { thetaMax: (s.manualDeg * Math.PI) / 180, widthFactor: 1, offset: 0 };
     } else if (s.sticky && s.stickyFails < STICKY_FAIL_LIMIT) {
       prof = s.sticky;
     } else {
@@ -326,7 +332,7 @@ export default function CylinderQRScanner() {
     lastFocusRef.current = sharpnessP98(gray, roiW, roiH);
     if (lastFocusRef.current < 10) return; // hopelessly blurred; save the CPU
 
-    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
+    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW, prof.offset);
     let rgba = unwarpColumns(gray, roiW, roiH, map, outW);
     s.attempts++;
 

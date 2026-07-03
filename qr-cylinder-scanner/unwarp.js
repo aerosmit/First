@@ -20,7 +20,9 @@
    * Returns { map, outW } where map[i] is the fractional source x for output
    * column i.
    */
-  function computeColumnMap(thetaMax, widthFactor, roiW) {
+  // offsetFrac shifts the assumed cylinder centerline laterally (fraction of
+  // ROI width) for codes that sit off-center on the vial.
+  function computeColumnMap(thetaMax, widthFactor, roiW, offsetFrac) {
     if (thetaMax === 0) {
       const map = new Float32Array(roiW);
       for (let i = 0; i < roiW; i++) map[i] = i;
@@ -28,7 +30,7 @@
     }
     const outW = Math.round(roiW * thetaMax / Math.sin(thetaMax));
     const map = new Float32Array(outW);
-    const cx = (roiW - 1) / 2;
+    const cx = (roiW - 1) / 2 + (offsetFrac || 0) * roiW;
     const halfW = ((roiW - 1) / 2) * widthFactor;
     for (let i = 0; i < outW; i++) {
       const u = (i / (outW - 1)) * 2 - 1;       // -1..1 across the flattened label

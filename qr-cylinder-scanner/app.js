@@ -58,10 +58,16 @@
   // assumed silhouette half-width vs. the guide lines (users never align
   // perfectly, and perspective makes the true silhouette slightly wider
   // than the orthographic model predicts).
-  const PROFILES = [{ thetaMax: 0, widthFactor: 1 }]; // flat fallback first
-  for (const deg of [40, 55, 66, 75, 82]) {
-    for (const wf of [1.0, 0.93, 1.08]) {
-      PROFILES.push({ thetaMax: deg * Math.PI / 180, widthFactor: wf });
+  // The raw frame goes to the native decoder every attempt, so the flatten
+  // sweep focuses on strong-curvature hypotheses, including off-center codes
+  // (offset = lateral shift of the assumed cylinder centerline) and vials
+  // wider than the guide box (widthFactor > 1).
+  const PROFILES = [{ thetaMax: 0, widthFactor: 1, offset: 0 }];
+  for (const deg of [45, 60, 72]) {
+    for (const wf of [1.0, 1.15, 1.3]) {
+      for (const off of [0, 0.12, -0.12]) {
+        PROFILES.push({ thetaMax: deg * Math.PI / 180, widthFactor: wf, offset: off });
+      }
     }
   }
 
@@ -239,11 +245,11 @@
   }
 
   // Cached wrapper over the pure map builder in unwarp.js.
-  function getColumnMap(thetaMax, widthFactor, roiW) {
-    const key = thetaMax.toFixed(4) + '|' + widthFactor + '|' + roiW;
+  function getColumnMap(thetaMax, widthFactor, roiW, offsetFrac) {
+    const key = thetaMax.toFixed(4) + '|' + widthFactor + '|' + roiW + '|' + (offsetFrac || 0);
     let entry = mapCache.get(key);
     if (!entry) {
-      entry = CylUnwarp.computeColumnMap(thetaMax, widthFactor, roiW);
+      entry = CylUnwarp.computeColumnMap(thetaMax, widthFactor, roiW, offsetFrac);
       mapCache.set(key, entry);
     }
     return entry;
@@ -309,7 +315,7 @@
     lastFocus = CylUnwarp.sharpnessP98(gray, roiW, roiH);
     if (lastFocus < 10) return; // hopelessly blurred; don't waste the CPU
 
-    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
+    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW, prof.offset);
     let rgba = CylUnwarp.unwarpColumns(gray, roiW, roiH, map, outW);
     attempts++;
 
