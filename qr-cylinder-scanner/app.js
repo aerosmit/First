@@ -76,6 +76,7 @@
   let torchOn = false;
   let audioCtx = null;
   let attempts = 0, lastResult = '';
+  let lastFocus = -1; // sharpness of latest ROI (see CylUnwarp.sharpnessP98)
 
   const roiCanvas = document.createElement('canvas'); // hidden source ROI
   const rctx = roiCanvas.getContext('2d', { willReadFrequently: true });
@@ -105,8 +106,10 @@
         audio: false,
         video: {
           facingMode: { ideal: 'environment' },
-          width:  { ideal: 1920 },
-          height: { ideal: 1080 },
+          // Ask for 4K: a dense 45-module code on a 1.6 cm vial needs every
+          // pixel of detail; Safari falls back to the best available mode.
+          width:  { ideal: 3840 },
+          height: { ideal: 2160 },
         },
       });
       video.srcObject = stream;
@@ -301,6 +304,7 @@
   async function decodeFrame(img, roiW, roiH, prof) {
     const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = CylUnwarp.toGray(img.data, roiW, roiH);
+    lastFocus = CylUnwarp.sharpnessP98(gray, roiW, roiH);
     let rgba = CylUnwarp.unwarpColumns(gray, roiW, roiH, map, outW);
     attempts++;
 
@@ -431,6 +435,18 @@
     octx.font = '12px -apple-system, sans-serif';
     octx.textAlign = 'center';
     octx.fillText('Align cylinder edges with green lines', b.x + b.w / 2, b.y - 22);
+
+    // Live focus meter — a frame only decodes when this reads GOOD.
+    if (lastFocus >= 0) {
+      const good = lastFocus >= 22, ok = lastFocus >= 12;
+      octx.fillStyle = good ? '#30d158' : ok ? '#ffd60a' : '#ff453a';
+      octx.font = 'bold 15px -apple-system, sans-serif';
+      octx.fillText(
+        good ? `Focus: GOOD (${lastFocus})`
+          : ok ? `Focus: almost (${lastFocus}) — hold steady`
+          : `TOO BLURRY (${lastFocus}) — back up to 12–15 cm, add light`,
+        b.x + b.w / 2, b.y + b.h + 32);
+    }
   }
 
   function drawPreview(rgba, w, h, loc) {

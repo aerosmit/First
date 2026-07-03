@@ -81,6 +81,22 @@ function sharpenGray(gray: Uint8ClampedArray, w: number, h: number, k = 0.6): Ui
   return out;
 }
 
+/** Focus score: 98th percentile of |horizontal gradient| via histogram.
+ * Calibrated against decodability of a dense 45-module QR at app framing:
+ * frames decode at scores in the low 20s+, fail below ~19. */
+function sharpnessP98(gray: Uint8ClampedArray, w: number, h: number): number {
+  const hist = new Uint32Array(256);
+  let n = 0;
+  for (let y = 0; y < h; y++) {
+    const base = y * w;
+    for (let x = 1; x < w; x++) { hist[Math.abs(gray[base + x] - gray[base + x - 1])]++; n++; }
+  }
+  let acc = 0;
+  const target = n * 0.98;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= target) return v; }
+  return 255;
+}
+
 /** Luma from RGBA pixel data. */
 function toGray(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
   const g = new Uint8ClampedArray(width * height);
@@ -140,6 +156,7 @@ export default function CylinderQRScanner() {
   const roiCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const flatCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const decodeBusyRef = useRef(false);
+  const lastFocusRef = useRef(-1); // sharpness of latest ROI (sharpnessP98)
   // Native decoder (hardware-grade; far more tolerant of blur/density than
   // jsQR). Not exposed by all iOS Safari versions — feature-detected.
   const nativeDetectorRef = useRef<any>(undefined);
@@ -247,6 +264,19 @@ export default function CylinderQRScanner() {
     octx.textAlign = "center";
     octx.fillText("Align cylinder edges with green lines", bD.x + bD.w / 2, bD.y - 22);
 
+    // Live focus meter — a frame only decodes when this reads GOOD.
+    const focus = lastFocusRef.current;
+    if (focus >= 0) {
+      const good = focus >= 22, ok = focus >= 12;
+      octx.fillStyle = good ? "#30d158" : ok ? "#ffd60a" : "#ff453a";
+      octx.font = "bold 15px -apple-system, sans-serif";
+      octx.fillText(
+        good ? `Focus: GOOD (${focus})`
+          : ok ? `Focus: almost (${focus}) — hold steady`
+          : `TOO BLURRY (${focus}) — back up to 12–15 cm, add light`,
+        bD.x + bD.w / 2, bD.y + bD.h + 32);
+    }
+
     if (decodeBusyRef.current || now - s.lastScanTime < SCAN_INTERVAL_MS) return;
     s.lastScanTime = now;
 
@@ -285,6 +315,7 @@ export default function CylinderQRScanner() {
     const s = scan.current;
     const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = toGray(img.data, roiW, roiH);
+    lastFocusRef.current = sharpnessP98(gray, roiW, roiH);
     let rgba = unwarpColumns(gray, roiW, roiH, map, outW);
     s.attempts++;
 
@@ -396,7 +427,8 @@ export default function CylinderQRScanner() {
       audioRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        // 4K if available: a dense code on a 1.6 cm vial needs every pixel.
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
       });
       streamRef.current = stream;
       const video = videoRef.current!;

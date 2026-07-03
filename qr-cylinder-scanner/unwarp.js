@@ -87,7 +87,31 @@
     return out;
   }
 
-  const api = { computeColumnMap, toGray, unwarpColumns, sharpenGray };
+  // Focus/sharpness score: 98th percentile of |horizontal gradient| via
+  // histogram (content-tolerant — ignores how much of the frame is blank
+  // label/background). Calibrated against decodability of a dense 45-module
+  // QR at app framing: frames decode down to ~scores in the low 20s, fail
+  // below ~19; badly defocused real captures score under 10.
+  function sharpnessP98(gray, w, h) {
+    const hist = new Uint32Array(256);
+    let n = 0;
+    for (let y = 0; y < h; y++) {
+      const base = y * w;
+      for (let x = 1; x < w; x++) {
+        hist[Math.abs(gray[base + x] - gray[base + x - 1])]++;
+        n++;
+      }
+    }
+    let acc = 0;
+    const target = n * 0.98;
+    for (let v = 0; v < 256; v++) {
+      acc += hist[v];
+      if (acc >= target) return v;
+    }
+    return 255;
+  }
+
+  const api = { computeColumnMap, toGray, unwarpColumns, sharpenGray, sharpnessP98 };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else global.CylUnwarp = api;
 })(typeof self !== 'undefined' ? self : this);
