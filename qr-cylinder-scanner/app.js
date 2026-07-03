@@ -45,7 +45,8 @@
   const againBtn   = document.getElementById('againBtn');
 
   // ---------- Config ----------
-  const ROI_W = 560;           // px width of the region-of-interest we sample from the video
+  const ROI_MIN_W = 560;       // floor for the region-of-interest width
+  const ROI_MAX_W = 1120;      // cap; above this decode cost outweighs detail
   const SCAN_INTERVAL_MS = 70; // throttle decode attempts (~14 fps)
   const STICKY_FAIL_LIMIT = 14;// failed frames on a previously-good profile before re-sweeping
 
@@ -277,10 +278,12 @@
     if (decodeBusy || now - lastScanTime < SCAN_INTERVAL_MS) return;
     lastScanTime = now;
 
-    // 1. Grab the guide-box region of the frame.
+    // 1. Grab the guide-box region of the frame at native resolution — a
+    // dense code on a small vial needs every pixel the sensor captured
+    // (downsampling to a fixed small ROI starved the decoders of detail).
     const bv = box.video;
-    const roiW = ROI_W;
-    const roiH = Math.max(2, Math.round(ROI_W * bv.h / bv.w));
+    const roiW = Math.min(ROI_MAX_W, Math.max(ROI_MIN_W, Math.round(bv.w)));
+    const roiH = Math.max(2, Math.round(roiW * bv.h / bv.w));
     if (roiCanvas.width !== roiW || roiCanvas.height !== roiH) {
       roiCanvas.width = roiW; roiCanvas.height = roiH;
     }
@@ -302,13 +305,24 @@
   }
 
   async function decodeFrame(img, roiW, roiH, prof) {
-    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = CylUnwarp.toGray(img.data, roiW, roiH);
     lastFocus = CylUnwarp.sharpnessP98(gray, roiW, roiH);
+    if (lastFocus < 10) return; // hopelessly blurred; don't waste the CPU
+
+    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     let rgba = CylUnwarp.unwarpColumns(gray, roiW, roiH, map, outW);
     attempts++;
 
     let text = null, loc = null;
+
+    // Native decoder on the raw (un-flattened) ROI every attempt — it has
+    // its own perspective handling and often reads mildly curved codes.
+    if (nativeDetector) {
+      try {
+        const found = await nativeDetector.detect(roiCanvas);
+        if (found && found.length && found[0].rawValue) text = found[0].rawValue;
+      } catch (_) { nativeDetector = null; }
+    }
 
     // Draw the flattened strip to a canvas: the native detector consumes it,
     // and the debug-frame export reuses it.
@@ -317,9 +331,8 @@
     }
     fctx.putImageData(new ImageData(rgba, outW, roiH), 0, 0);
 
-    // Native decoder first — hardware-grade, handles dense/soft codes that
-    // jsQR cannot.
-    if (nativeDetector) {
+    // Native decoder on the flattened strip.
+    if (!text && nativeDetector) {
       try {
         const found = await nativeDetector.detect(flatCanvas);
         if (found && found.length && found[0].rawValue) text = found[0].rawValue;

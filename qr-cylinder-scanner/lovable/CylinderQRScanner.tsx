@@ -45,7 +45,8 @@ for (const deg of [40, 55, 66, 75, 82]) {
   }
 }
 
-const ROI_W = 560; // px width of the sampled region of interest
+const ROI_MIN_W = 560; // floor for the sampled region-of-interest width
+const ROI_MAX_W = 1120; // cap; above this decode cost outweighs detail
 const SCAN_INTERVAL_MS = 70; // ~14 decode attempts/sec
 const STICKY_FAIL_LIMIT = 14; // failures before re-sweeping a locked profile
 const BOX_W_FRAC = 0.64; // guide box fraction of visible frame width
@@ -287,9 +288,10 @@ export default function CylinderQRScanner() {
     if (decodeBusyRef.current || now - s.lastScanTime < SCAN_INTERVAL_MS) return;
     s.lastScanTime = now;
 
-    // 1) grab guide-box region
-    const roiW = ROI_W;
-    const roiH = Math.max(2, Math.round((ROI_W * bhV) / bwV));
+    // 1) grab guide-box region at native capture resolution — dense codes
+    // need every pixel the sensor delivered
+    const roiW = Math.min(ROI_MAX_W, Math.max(ROI_MIN_W, Math.round(bwV)));
+    const roiH = Math.max(2, Math.round((roiW * bhV) / bwV));
     if (!roiCanvasRef.current) roiCanvasRef.current = document.createElement("canvas");
     const roiCanvas = roiCanvasRef.current;
     if (roiCanvas.width !== roiW || roiCanvas.height !== roiH) { roiCanvas.width = roiW; roiCanvas.height = roiH; }
@@ -320,14 +322,31 @@ export default function CylinderQRScanner() {
 
   async function decodeFrame(img: ImageData, roiW: number, roiH: number, prof: Profile) {
     const s = scan.current;
-    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     const gray = toGray(img.data, roiW, roiH);
     lastFocusRef.current = sharpnessP98(gray, roiW, roiH);
+    if (lastFocusRef.current < 10) return; // hopelessly blurred; save the CPU
+
+    const { map, outW } = getColumnMap(prof.thetaMax, prof.widthFactor, roiW);
     let rgba = unwarpColumns(gray, roiW, roiH, map, outW);
     s.attempts++;
 
     let text: string | null = null;
     let loc: any = null;
+
+    // Native + ZXing on the raw (un-flattened) frame every attempt — both
+    // have their own perspective handling and often read mildly curved codes.
+    if (nativeDetectorRef.current && roiCanvasRef.current) {
+      try {
+        const found = await nativeDetectorRef.current.detect(roiCanvasRef.current);
+        if (found?.length && found[0].rawValue) text = found[0].rawValue;
+      } catch { nativeDetectorRef.current = null; }
+    }
+    if (!text && !zxingBroken) {
+      try {
+        const found = await readBarcodes(img, ZXING_OPTS as any);
+        if (found.length && found[0].text) text = found[0].text;
+      } catch { zxingBroken = true; }
+    }
 
     // Draw the flattened strip to a canvas: the native detector consumes it,
     // and the debug-frame export reuses it.
@@ -338,9 +357,8 @@ export default function CylinderQRScanner() {
     // Cast: some TS DOM libs type ImageData's param as Uint8ClampedArray<ArrayBuffer>
     fctx.putImageData(new ImageData(rgba as never, outW, roiH), 0, 0);
 
-    // Native decoder first — hardware-grade, handles dense/soft codes that
-    // jsQR cannot.
-    if (nativeDetectorRef.current) {
+    // Native decoder on the flattened strip.
+    if (!text && nativeDetectorRef.current) {
       try {
         const found = await nativeDetectorRef.current.detect(flatCanvas);
         if (found?.length && found[0].rawValue) text = found[0].rawValue;
