@@ -6,7 +6,7 @@
  * decoding.
  *
  * LOVABLE SETUP (tell Lovable, or it will infer from this header):
- *   1. Add the npm dependency "jsqr" (^1.4.0).
+ *   1. Add the npm dependencies "jsqr" (^1.4.0) and "zxing-wasm" (^2).
  *   2. Use this component as the main (index) page, full screen.
  *   3. No other dependencies needed — styling is Tailwind, all logic is here.
  *   4. Camera requires HTTPS — Lovable previews/deploys are HTTPS, so it
@@ -25,6 +25,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
+import { readBarcodes } from "zxing-wasm/reader";
+
+// Decode order per frame: native BarcodeDetector (hardware, where Safari
+// exposes it) → ZXing wasm (strongest software decoder; handles rotation,
+// low contrast, dense codes) → jsQR (+ sharpened retry) as a last resort.
+const ZXING_OPTS = { formats: ["QRCode"], tryHarder: true, tryRotate: true, tryInvert: true } as const;
+let zxingBroken = false; // set if the wasm fails to load; degrade gracefully
 
 // ---------------- pure geometry helpers ----------------
 
@@ -342,6 +349,17 @@ export default function CylinderQRScanner() {
       }
     }
 
+    // ZXing wasm — much stronger than jsQR on rotated/low-contrast/dense codes.
+    if (!text && !zxingBroken) {
+      try {
+        const found = await readBarcodes(
+          new ImageData(rgba as never, outW, roiH), ZXING_OPTS as any);
+        if (found.length && found[0].text) text = found[0].text;
+      } catch {
+        zxingBroken = true;
+      }
+    }
+
     if (!text) {
       let code = jsQR(rgba, outW, roiH, { inversionAttempts: "attemptBoth" });
       if (!code) {
@@ -375,7 +393,7 @@ export default function CylinderQRScanner() {
       statusRef.current.textContent =
         (s.manual ? `manual ${deg}°` : s.sticky ? `locked ${deg}°` : `sweeping… ${deg}°`) +
         ` · attempt ${s.attempts}` +
-        (nativeDetectorRef.current ? " · native+jsQR" : " · jsQR only");
+        ` · ${[nativeDetectorRef.current && "native", !zxingBroken && "zxing", "jsQR"].filter(Boolean).join("+")}`;
     }
 
     if (text) {
