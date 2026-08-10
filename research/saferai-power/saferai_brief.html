@@ -1,0 +1,1648 @@
+<title>SAFERai.power — Research Brief &amp; Working Strategy</title>
+<style>
+  /* ============ TOKENS: light is the base, complete palette ============ */
+  :root {
+    --ground:        #F1F4F3;
+    --surface:       #FFFFFF;
+    --sunken:        #E5EAE8;
+    --ink:           #131E1C;
+    --ink-mid:       #3D4E4A;
+    --ink-soft:      #5F706C;
+    --rule:          #CED8D5;
+    --rule-soft:     #DFE6E4;
+    --accent:        #0E6F63;
+    --accent-deep:   #0A544B;
+    --accent-soft:   #D5E7E3;
+    --amber:         #97590F;
+    --amber-soft:    #F2E4D0;
+    --shadow:        0 1px 2px rgba(19,30,28,.05), 0 8px 24px -16px rgba(19,30,28,.28);
+
+    --sans: ui-sans-serif, "Helvetica Neue", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Hoefler Text", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  /* system-default dark (no stamp on root) — explicit light choice still wins */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D1312;
+      --surface:     #151D1C;
+      --sunken:      #0A100F;
+      --ink:         #E3EAE8;
+      --ink-mid:     #B0BFBB;
+      --ink-soft:    #8B9C97;
+      --rule:        #2A3634;
+      --rule-soft:   #1E2827;
+      --accent:      #4FC8B4;
+      --accent-deep: #7FDCCB;
+      --accent-soft: #10322D;
+      --amber:       #D9A05B;
+      --amber-soft:  #2E2216;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  /* explicit dark choice wins over a light OS */
+  :root[data-theme="dark"] {
+    --ground:      #0D1312;
+    --surface:     #151D1C;
+    --sunken:      #0A100F;
+    --ink:         #E3EAE8;
+    --ink-mid:     #B0BFBB;
+    --ink-soft:    #8B9C97;
+    --rule:        #2A3634;
+    --rule-soft:   #1E2827;
+    --accent:      #4FC8B4;
+    --accent-deep: #7FDCCB;
+    --accent-soft: #10322D;
+    --amber:       #D9A05B;
+    --amber-soft:  #2E2216;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  /* ============ BASE ============ */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 82rem;
+    margin-inline: auto;
+    padding: 0 clamp(1.1rem, 4vw, 3.25rem) 6rem;
+  }
+
+  /* ============ MASTHEAD ============ */
+  .masthead { padding: clamp(3rem, 7vw, 5.5rem) 0 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .69rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    flex-wrap: wrap;
+  }
+  .eyebrow::after {
+    content: "";
+    flex: 1 1 3rem;
+    height: 1px;
+    background: var(--rule);
+    min-width: 2rem;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-weight: 760;
+    font-size: clamp(2.35rem, 6.4vw, 4.15rem);
+    line-height: 1.02;
+    letter-spacing: -.035em;
+    text-wrap: balance;
+    margin: 0 0 1.25rem;
+    max-width: 20ch;
+  }
+  h1 .lo { color: var(--ink-soft); font-weight: 600; }
+  .deck {
+    font-size: clamp(1.08rem, 2.1vw, 1.3rem);
+    line-height: 1.5;
+    color: var(--ink-mid);
+    max-width: 56ch;
+    margin: 0 0 2.4rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.5rem;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.05rem 0;
+    margin-bottom: 3.5rem;
+  }
+  .meta div { padding: .35rem 0; }
+  .meta dt {
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 .3rem;
+  }
+  .meta dd {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: .92rem;
+    font-weight: 570;
+    letter-spacing: -.006em;
+  }
+
+  /* ============ CONTENTS ============ */
+  .toc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule-soft);
+    border: 1px solid var(--rule-soft);
+    margin-bottom: 4.5rem;
+  }
+  .toc a {
+    background: var(--surface);
+    padding: 1rem 1.15rem;
+    text-decoration: none;
+    color: var(--ink);
+    display: flex;
+    gap: .8rem;
+    align-items: baseline;
+    transition: background .14s ease;
+  }
+  .toc a:hover, .toc a:focus-visible { background: var(--accent-soft); }
+  .toc b {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--accent);
+    letter-spacing: .06em;
+    flex: none;
+  }
+  .toc span {
+    font-family: var(--sans);
+    font-size: .89rem;
+    font-weight: 520;
+    line-height: 1.35;
+    letter-spacing: -.008em;
+  }
+
+  /* ============ CLAUSE STRUCTURE ============ */
+  .clause {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .5rem;
+    padding-top: 3.4rem;
+    margin-top: 3.4rem;
+    border-top: 1px solid var(--rule);
+  }
+  .clause:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  @media (min-width: 62rem) {
+    .clause { grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: 2.75rem; }
+  }
+  .rail { }
+  .clause-num {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .1em;
+    color: var(--accent);
+    display: block;
+    padding-top: .55rem;
+  }
+  @media (min-width: 62rem) {
+    .rail { position: sticky; top: 1.5rem; align-self: start; }
+    .clause-num { border-top: 2px solid var(--accent); padding-top: .7rem; }
+  }
+
+  /* ============ HEADINGS & PROSE ============ */
+  h2 {
+    font-family: var(--sans);
+    font-weight: 720;
+    font-size: clamp(1.6rem, 3.3vw, 2.15rem);
+    line-height: 1.1;
+    letter-spacing: -.028em;
+    text-wrap: balance;
+    margin: 0 0 1.5rem;
+    max-width: 24ch;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 660;
+    font-size: 1.13rem;
+    line-height: 1.28;
+    letter-spacing: -.014em;
+    text-wrap: balance;
+    margin: 2.9rem 0 .9rem;
+    max-width: 46ch;
+    color: var(--ink);
+  }
+  h4 {
+    font-family: var(--mono);
+    font-weight: 620;
+    font-size: .73rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 2.4rem 0 .8rem;
+  }
+  p, ul, ol { max-width: 68ch; }
+  p { margin: 0 0 1.15rem; }
+  ul, ol { margin: 0 0 1.3rem; padding-left: 1.25rem; }
+  li { margin-bottom: .5rem; padding-left: .2rem; }
+  li::marker { color: var(--accent); }
+  strong { font-weight: 640; color: var(--ink); }
+  em { font-style: italic; }
+  a { color: var(--accent-deep); text-decoration-thickness: 1px; text-underline-offset: .16em; }
+  a:hover { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  code {
+    font-family: var(--mono);
+    font-size: .855em;
+    background: var(--sunken);
+    padding: .1em .38em;
+    border-radius: 2px;
+    color: var(--ink-mid);
+  }
+
+  /* ============ CALLOUTS ============ */
+  .note {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 1.15rem 1.35rem;
+    margin: 1.9rem 0;
+    max-width: 66ch;
+  }
+  .note > :last-child { margin-bottom: 0; }
+  .note p { font-size: .96rem; }
+  .note.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+
+  .thesis {
+    font-family: var(--sans);
+    font-weight: 640;
+    font-size: clamp(1.2rem, 2.7vw, 1.62rem);
+    line-height: 1.28;
+    letter-spacing: -.022em;
+    color: var(--ink);
+    border-top: 2px solid var(--accent);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.5rem 0;
+    margin: 2.2rem 0;
+    max-width: 34ch;
+    text-wrap: balance;
+  }
+
+  /* ============ FIGURE / ARITHMETIC READOUT ============ */
+  .readout {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
+    padding: 1.6rem 1.75rem;
+    margin: 2.2rem 0;
+    max-width: 46rem;
+  }
+  .readout-calc {
+    font-family: var(--mono);
+    font-size: clamp(.78rem, 1.7vw, .93rem);
+    color: var(--ink-mid);
+    font-variant-numeric: tabular-nums;
+    margin: 0 0 1.15rem;
+    padding-bottom: 1.15rem;
+    border-bottom: 1px dashed var(--rule);
+    max-width: none;
+  }
+  .readout-fig {
+    font-family: var(--sans);
+    font-weight: 740;
+    font-size: clamp(2.1rem, 5.6vw, 3.1rem);
+    line-height: 1;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    margin: 0 0 .55rem;
+  }
+  .readout-cap {
+    font-family: var(--sans);
+    font-size: .95rem;
+    line-height: 1.42;
+    color: var(--ink-mid);
+    margin: 0;
+    max-width: 48ch;
+  }
+
+  /* ============ TABLES ============ */
+  .scroller {
+    overflow-x: auto;
+    margin: 1.7rem 0 2.1rem;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-family: var(--sans);
+    font-size: .875rem;
+    line-height: 1.48;
+  }
+  thead th {
+    font-family: var(--mono);
+    font-weight: 620;
+    font-size: .655rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--ink-soft);
+    background: var(--sunken);
+    padding: .78rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  tbody td, tbody th {
+    padding: .82rem 1rem;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    text-align: left;
+    font-weight: 400;
+  }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+  tbody th { font-weight: 620; color: var(--ink); }
+  td.num, th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.wk {
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--accent);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  table.totals tbody tr:last-child { background: var(--sunken); }
+  table.totals tbody tr:last-child td { font-weight: 680; border-top: 1px solid var(--rule); }
+
+  /* ============ RANKED STEAL CARDS ============ */
+  .steals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1px;
+    background: var(--rule-soft);
+    border: 1px solid var(--rule-soft);
+    margin: 2rem 0 2.4rem;
+  }
+  .steal { background: var(--surface); padding: 1.4rem 1.4rem 1.5rem; }
+  .steal-rank {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: .7rem;
+  }
+  .steal h5 {
+    font-family: var(--sans);
+    font-weight: 680;
+    font-size: 1rem;
+    letter-spacing: -.014em;
+    line-height: 1.25;
+    margin: 0 0 .2rem;
+  }
+  .steal .src {
+    font-family: var(--mono);
+    font-size: .67rem;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin: 0 0 .8rem;
+  }
+  .steal p { font-size: .885rem; line-height: 1.5; margin: 0; color: var(--ink-mid); max-width: none; }
+  .steal p + p { margin-top: .7rem; }
+
+  /* ============ SPINE (synthesis stack) ============ */
+  .spine {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    margin: 2rem 0 2.4rem;
+    overflow-x: auto;
+  }
+  .spine-row {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1.1fr) minmax(13rem, 1.5fr);
+    gap: 1.25rem;
+    padding: .72rem 1.15rem;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: baseline;
+    min-width: 28rem;
+  }
+  .spine-row:last-child { border-bottom: 0; }
+  .spine-row b {
+    font-family: var(--mono);
+    font-size: .755rem;
+    font-weight: 570;
+    color: var(--accent);
+    letter-spacing: -.005em;
+  }
+  .spine-row span {
+    font-family: var(--sans);
+    font-size: .855rem;
+    color: var(--ink-mid);
+    line-height: 1.4;
+  }
+
+  /* ============ TIMELINE ============ */
+  .phases { margin: 2rem 0 2.4rem; border-top: 1px solid var(--rule); }
+  .phase {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .25rem 1.75rem;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  @media (min-width: 42rem) {
+    .phase { grid-template-columns: 5.5rem minmax(0, 1fr); }
+  }
+  .phase-wk {
+    font-family: var(--mono);
+    font-size: .77rem;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    padding-top: .18rem;
+    letter-spacing: .02em;
+  }
+  .phase h5 {
+    font-family: var(--sans);
+    font-weight: 660;
+    font-size: .99rem;
+    letter-spacing: -.012em;
+    margin: 0 0 .35rem;
+  }
+  .phase p { font-size: .89rem; color: var(--ink-mid); margin: 0; max-width: 64ch; line-height: 1.5; }
+
+  /* ============ SOURCES ============ */
+  .sources { font-size: .855rem; line-height: 1.55; }
+  .sources h3 { font-family: var(--mono); font-size: .7rem; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); font-weight: 620; margin: 2.2rem 0 .7rem; }
+  .sources p { max-width: 76ch; color: var(--ink-mid); margin-bottom: .8rem; }
+  .sources a { color: var(--ink-mid); text-decoration-color: var(--rule); }
+  .sources a:hover { color: var(--accent); text-decoration-color: currentColor; }
+
+  .colophon {
+    margin-top: 4.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .04em;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    max-width: 70ch;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">EPRI &middot; Research Brief &amp; Working Strategy</p>
+    <h1>SAFERai<span class="lo">.power</span></h1>
+    <p class="deck">
+      What EPRI launched on 6 August 2026, the standards it rests on, what four other regulated
+      industries have already solved — and a 26-week operating strategy for the founding member
+      utilities, sized to the one person-year of expert time they actually have.
+    </p>
+    <dl class="meta">
+      <div><dt>Prepared</dt><dd>10 August 2026</dd></div>
+      <div><dt>Initiative launched</dt><dd>6 August 2026</dd></div>
+      <div><dt>Founding members</dt><dd>~28 organizations</dd></div>
+      <div><dt>Total SME budget</dt><dd>≈2,000 hours</dd></div>
+      <div><dt>MVP</dt><dd>Tier &amp; File v1.0</dd></div>
+    </dl>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#s0"><b>00</b><span>Method &amp; confidence</span></a>
+    <a href="#s1"><b>01</b><span>What SAFERai.power is</span></a>
+    <a href="#s2"><b>02</b><span>Source library</span></a>
+    <a href="#s3"><b>03</b><span>The standards landscape</span></a>
+    <a href="#s4"><b>04</b><span>What other industries solved</span></a>
+    <a href="#s5"><b>05</b><span>Proposed operating strategy</span></a>
+    <a href="#s6"><b>06</b><span>The MVP</span></a>
+    <a href="#s7"><b>07</b><span>After the MVP</span></a>
+    <a href="#s8"><b>08</b><span>Staying ahead of the curve</span></a>
+    <a href="#s9"><b>09</b><span>Open questions</span></a>
+    <a href="#s10"><b>10</b><span>Immediate actions</span></a>
+    <a href="#src"><b>—</b><span>Sources</span></a>
+  </nav>
+
+  <!-- ================= 00 ================= -->
+  <section class="clause" id="s0">
+    <div class="rail"><span class="clause-num">00</span></div>
+    <div>
+      <h2>Research method and confidence</h2>
+      <p>
+        Primary sources were reached through web search. Direct page retrieval of <code>epri.com</code>,
+        <code>msites.epri.com/saferai</code>, <code>openpowerai.org</code>, <code>globenewswire.com</code>
+        and <code>nist.gov</code> was blocked by this environment's network egress policy, so
+        EPRI-specific detail below comes from search-engine extraction of the 6 August 2026 press
+        release and the SAFERai microsite rather than from those pages themselves.
+      </p>
+      <p>
+        <strong>High confidence</strong> — reproduced consistently across independent results and
+        mirrors: the SAFER acronym, the founding member list, the standards mapping, the ~80-hour SME
+        contribution, SDF eligibility, and the deliverable categories.
+      </p>
+      <p>
+        <strong>Medium confidence, verify directly with EPRI</strong>: exact phase dates, governance
+        model, per-workstream structure, and any fee schedule. Clause 09 lists the questions to close.
+      </p>
+      <div class="note warn">
+        <p>
+          <strong>Naming collision.</strong> <em>SaferAI</em> (safer-ai.org) is a separate French
+          non-profit publishing AI risk-management maturity ratings of frontier developers. Unrelated
+          to EPRI's SAFERai.power — though its ratings methodology is a useful reference for grading
+          vendor maturity, making the collision a mild inconvenience rather than pure nuisance.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 01 ================= -->
+  <section class="clause" id="s1">
+    <div class="rail"><span class="clause-num">01</span></div>
+    <div>
+      <h2>What SAFERai.power actually is</h2>
+      <p>
+        An EPRI-led, OPAI-aligned collaborative announced <strong>6 August 2026</strong> to build the
+        operational risk framework, evidence templates, and open-source assessment tooling utilities
+        need <em>before</em> AI enters utility workflows. It is deliberately not a research program
+        about AI capability — it is an assurance program about AI deployment.
+      </p>
+      <p>
+        <strong>SAFER</strong> = <strong>S</strong>afety, <strong>A</strong>ccountability,
+        <strong>F</strong>airness, <strong>E</strong>xplainability, <strong>R</strong>eliability: the
+        five power-system attributes the initiative treats as the things AI can damage.
+      </p>
+
+      <h3>Founding members (~28 named)</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Category</th><th scope="col">Organizations</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Investor-owned / large utilities</th><td>Alliant, Ameren, Arizona Public Service, CenterPoint Energy, Con Edison, Constellation, Duke Energy, Exelon, Pacific Gas &amp; Electric, Southern California Edison, Southern Company, WEC Energy Group</td></tr>
+            <tr><th scope="row">Public power / co-op / federal</th><td>Cooperative Energy, CPS Energy, Nebraska Public Power District, New York Power Authority, Omaha Public Power District, Salt River Project, TVA</td></tr>
+            <tr><th scope="row">Transmission / markets / reliability</th><td>ATC, MISO, PJM Interconnection, <strong>NERC</strong></td></tr>
+            <tr><th scope="row">Technology</th><td>Microsoft, NVIDIA, HData, SHI International, World Wide Technology</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two things about this roster matter strategically:</p>
+      <ol>
+        <li>
+          <strong>NERC is in the room.</strong> A reliability organization inside a voluntary framework
+          effort is unusual and valuable — it gives the framework a path to being <em>recognized</em>
+          rather than merely published. It also means the group must be disciplined about not writing
+          anything that reads like a draft reliability standard before it is ready.
+        </li>
+        <li>
+          <strong>The mix is deliberately asymmetric.</strong> Vendors are evidence <em>producers</em>;
+          utilities are evidence <em>consumers</em>; NERC, MISO and PJM are systemic risk holders. The
+          framework only works if written to be used across that boundary — a utility asking a vendor
+          for evidence, in a form the vendor can actually produce.
+        </li>
+      </ol>
+
+      <h3>Stated deliverables</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Bucket</th><th scope="col">Contents</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Risk framework</th><td>Risk scenarios, failure modes, autonomy levels, guardrails, use-case tiers. A common way to evaluate AI by use case, consequence, autonomy and operating context.</td></tr>
+            <tr><th scope="row">Evidence packages</th><td>AI System Risk File templates (provider + deployer). Minimum package: purpose, data provenance, capabilities, limitations, oversight, TEVV, deployment conditions, monitoring, incidents, reassessment triggers.</td></tr>
+            <tr><th scope="row">Assessment tooling</th><td>Open-source tiered risk assessment tool; registry-backed workflow; AI System Registry prototype.</td></tr>
+            <tr><th scope="row">Operational protocols</th><td>Tiered TEVV protocols, monitoring triggers and runbooks, pilot playbooks and evaluations.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The roadmap is described as phased across multiple years, ending in a full open-source toolkit
+        release and transition to "enduring framework stewardship."
+      </p>
+
+      <h3>The participation model — the single most important design constraint</h3>
+      <p>Two facts define what this group can realistically produce:</p>
+      <ul>
+        <li>Each organization contributes <strong>~80 hours of skilled SME time</strong>.</li>
+        <li>Participation <strong>qualifies for Self Direct Funds (SDF)</strong>, so members can fund it from money they already control.</li>
+      </ul>
+      <p>
+        SDF eligibility is the recruiting unlock — it removes the "no budget line for this" objection
+        almost entirely, and should lead every membership conversation. But do the arithmetic on the
+        SME time, because it dictates everything downstream.
+      </p>
+
+      <div class="readout">
+        <p class="readout-calc">25 organizations &times; 80 hours = 2,000 SME hours &asymp; 0.96 FTE-years</p>
+        <p class="readout-fig">2,000 hrs</p>
+        <p class="readout-cap">
+          The entire industry expert budget for this initiative is approximately <strong>one
+          person-year</strong>, spread across 25 organizations and fragmented into roughly three hours
+          per person per week.
+        </p>
+      </div>
+
+      <p>
+        That number should be printed at the top of every planning document. It rules out the default
+        mode of industry consortia — convening working groups to author documents from a blank page.
+        One person-year does not write a standard. One person-year <em>can</em> harvest, reconcile,
+        test and ratify material that already exists.
+      </p>
+      <div class="note">
+        <p>
+          <strong>Strategic consequence:</strong> SAFERai.power must run as a
+          <strong>harvest-and-ratify</strong> operation, not an authoring operation. Everything in
+          clauses 05–07 follows from this.
+        </p>
+      </div>
+      <p>
+        Contribution domains named by EPRI shape who members should send.
+        <em>Operational:</em> grid operations, planning, asset management, customer operations, field
+        work, vegetation management, OT environments.
+        <em>Digital/AI:</em> AI lifecycle, open-source tooling, testing, evaluation, agentic systems,
+        risk assessment automation.
+      </p>
+
+      <h3>Lineage: how this relates to OPAI</h3>
+      <p>
+        SAFERai.power builds on EPRI's <strong>Open Power AI Consortium (OPAI)</strong>, launched
+        March 2025 at NVIDIA GTC. OPAI is the <em>build</em> side; SAFERai.power is the
+        <em>assure</em> side. Inherited assets worth exploiting rather than rebuilding:
+      </p>
+      <ul>
+        <li><strong>250+ prioritized AI use cases</strong> from the OPAI Use Case Workstream — the corpus the tiering rubric must be calibrated against. Re-deriving it would consume most of the 2,000 hours.</li>
+        <li><strong>An AI Sandbox</strong> for member testing prior to field deployment — the natural home for TEVV protocol execution.</li>
+        <li><strong>Domain-specific generative models</strong> for the power sector (Articul8, NVIDIA, delivered via NIM microservices) — concrete systems needing risk files, a ready-made dogfooding target.</li>
+        <li><strong>Live workstreams</strong> on asset image analytics / vegetation management and AMI-based outage detection.</li>
+        <li><strong>AI for Power 2026 Challenge</strong> with Incubatenergy Labs — demonstrations produce exactly the deployment evidence SAFERai needs.</li>
+        <li>Scale: 175+ confirmed members, 125+ in process.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="clause" id="s2">
+    <div class="rail"><span class="clause-num">02</span></div>
+    <div>
+      <h2>Source library</h2>
+      <h4>EPRI &amp; OPAI primary sources</h4>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Source</th><th scope="col">Location</th><th scope="col">Note</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">SAFERai microsite</th><td><code>msites.epri.com/saferai</code></td><td>Primary source of record: roadmap, deliverables, join info.</td></tr>
+            <tr><th scope="row">Launch release (6 Aug 2026)</th><td><code>globenewswire.com/…/3340219</code></td><td>Member list, quotes, framing.</td></tr>
+            <tr><th scope="row">OPAI hub</th><td><code>openpowerai.org</code> + /about, /consortium-membership, /events</td><td>Consortium mechanics; meeting recordings.</td></tr>
+            <tr><th scope="row">OPAI Use Case Workstream survey (May 2026)</th><td><code>openpowerai.org/sites/…/2026-05/</code></td><td>The prioritized use-case corpus.</td></tr>
+            <tr><th scope="row">Domain-Specific Model kickoff (Dec 2025)</th><td><code>openpowerai.org/sites/…/2025-12/</code></td><td>What models exist to assure.</td></tr>
+            <tr><th scope="row">AI for Power 2026 Challenge</th><td><code>epri.brightidea.com/AIforPower2026</code></td><td>Demonstration pipeline.</td></tr>
+            <tr><th scope="row">Summer Seminar 2026 — <em>Speed to Power</em></th><td><code>epri.com/pages/sa/summer-seminar</code></td><td>Executive audience; natural ratification venue.</td></tr>
+            <tr><th scope="row">AI &amp; Electric Power Summit</th><td><code>aielectricpower.com</code></td><td>The sector's main AI convening.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>EPRI research products to pull</h4>
+      <ul>
+        <li><em>An Introduction to AI, its Use Cases, and Requirements</em> — <code>000000003002017143</code></li>
+        <li><em>Artificial Intelligence: Concepts for Electric Power</em> — <code>000000003002010236</code></li>
+        <li><em>AI Readiness in Utilities: Turning Data into Strategic Advantage</em> (Aug 2025) — <code>000000003002033653</code></li>
+        <li><em>Scaling Intelligence: The Exponential Growth of AI's Power Demand</em> (with Epoch AI) — <code>000000003002033669</code></li>
+        <li><em>Analyzing Artificial Intelligence and Data Center Energy</em> — <code>3002028905</code></li>
+      </ul>
+
+      <h4>Video &amp; recorded material</h4>
+      <p>
+        There is <strong>no SAFERai.power-specific video yet</strong> — the initiative is four days old.
+        The relevant existing corpus:
+      </p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Video</th><th scope="col">Relevance</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=3szqhJy71EM">Inside EPRI's DCFlex Initiative</a></th><td><strong>Best available model of how EPRI runs a multi-utility initiative.</strong> Watch for the operating pattern, not the content.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=WOt8xgpC370">RTE &amp; EPRI — Learning to Run a Power Network (L2RPN)</a></th><td><strong>Directly relevant to TEVV.</strong> An existing benchmark for AI grid control — a live example of competitive/adversarial evaluation.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=ElFf_E0uCG8">AI-Effect Podcast — EnerTEF / Energy Guard</a> (Apr 2026)</th><td>Most recent; shared AI infrastructure for utilities.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=ckNJ1IpnzYM">EPRI Technology Radar &amp; Pulse Report</a></th><td>The horizon-scanning machinery clause 08 proposes reusing.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=7U-NvEfKVfc">DGX Spark: Powering EPRI's AI Research</a></th><td>EPRI's compute and test posture.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/watch?v=wsW_sPEMVFE">Convening AI and Electric Power: Virtual Roundtable</a></th><td>Ameren, CPS Energy, Microsoft, NREL — several are now SAFERai founders.</td></tr>
+            <tr><th scope="row"><a href="https://www.youtube.com/user/EPRIvideos">EPRI official channel</a></th><td>Root source; monitor for SAFERai content.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p>
+          <strong>The two to actually watch:</strong> DCFlex, for the operating model of a fast
+          multi-utility EPRI initiative; and L2RPN, for a working example of benchmark-based evaluation
+          of AI in grid control.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="clause" id="s3">
+    <div class="rail"><span class="clause-num">03</span></div>
+    <div>
+      <h2>The standards landscape</h2>
+      <p>
+        SAFERai.power explicitly maps to NIST AI RMF, ISO/IEC 42001, IEC 62443, NERC CIP concepts, the
+        EU AI Act and mature utility programs. Here is what each actually contributes.
+      </p>
+
+      <h3>NIST</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Standard</th><th scope="col">What it gives SAFERai</th><th scope="col">Gap it leaves</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">AI RMF 1.0 — GOVERN / MAP / MEASURE / MANAGE</th><td>The organizing spine. GOVERN is org-wide; MAP/MEASURE/MANAGE apply per-system — exactly the utility-plus-use-case split SAFERai needs.</td><td>Deliberately non-prescriptive. No thresholds, no pass/fail, no sector context.</td></tr>
+            <tr><th scope="row">NIST AI 600-1 — Generative AI Profile (Jul 2024)</th><td>12 GenAI risk categories with suggested actions across governance, content provenance, pre-deployment testing and incident disclosure.</td><td>GenAI-general, not OT-aware. Says nothing about a system that can trip a breaker.</td></tr>
+            <tr><th scope="row">SP 800-53 control overlays for AI</th><td>Would connect AI risk to control language utility security teams already speak.</td><td><strong>Still in progress through 2026.</strong> Track and, where possible, contribute — an early sector overlay is high-leverage.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p>
+          <strong>The honest read on NIST AI RMF:</strong> it is a vocabulary and a completeness check,
+          not a decision procedure. It tells you to measure; it does not tell you what "good" looks
+          like for a vegetation-management vision model making a cut/no-cut call. That gap —
+          sector-specific acceptance criteria — is precisely SAFERai.power's reason to exist. The group
+          should say so plainly rather than positioning itself as "implementing NIST."
+        </p>
+      </div>
+
+      <h3>ISO/IEC</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Standard</th><th scope="col">Status</th><th scope="col">Role</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">ISO/IEC 42001:2023 — AI Management System</th><td><strong>Certifiable</strong></td><td>The organizational shell. A utility can be certified — gives executives a recognizable compliance object.</td></tr>
+            <tr><th scope="row">ISO/IEC 23894 — AI risk management</th><td>Guidance</td><td>Extends ISO 31000 to AI risk. The risk-process detail 42001 requires.</td></tr>
+            <tr><th scope="row">ISO/IEC 42005:2025 — AI system impact assessment</th><td>Guidance</td><td><strong>Closest existing analogue to the AI System Risk File.</strong> Start here rather than from blank paper.</td></tr>
+            <tr><th scope="row">ISO/IEC 38507 — AI governance for the board</th><td>Guidance</td><td>Board-level framing for the executive layer.</td></tr>
+            <tr><th scope="row">ISO/IEC 5338 — AI lifecycle processes</th><td>Guidance</td><td>Lifecycle stage definitions; useful for reassessment triggers.</td></tr>
+            <tr><th scope="row">ISO/IEC TR 5469 — functional safety &amp; AI</th><td>Emerging TR</td><td><strong>The bridge</strong> between AI and the functional-safety world utilities already live in. Track closely.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Power-sector and OT</h3>
+      <ul>
+        <li>
+          <strong>IEC 62443</strong> — its <em>zones and conduits</em> model is the natural mechanism
+          for containing AI in OT: an AI agent lives in a zone and communicates through a conduit with
+          defined, enforceable constraints. <strong>The most directly reusable structural idea in the
+          entire standards set</strong> — lean on it hard for the guardrail catalog.
+        </li>
+        <li>
+          <strong>NERC CIP</strong> — BES Cyber System categorization, access control, change
+          management, incident reporting map onto AI system classification with moderate translation
+          effort. NERC's membership makes the mapping credible.
+        </li>
+        <li>
+          <strong>IEC 61508 / 61511</strong> — important mainly for what they <em>exclude</em>: AI has
+          historically been disallowed as a technique for achieving functional safety, and SIL
+          certification does not accommodate ML. Assume any AI touching a safety instrumented function
+          is out of scope for now, and say so explicitly. <strong>A clear exclusion boundary is itself
+          a valuable deliverable.</strong>
+        </li>
+      </ul>
+
+      <h3>Regulatory context — and one distinction that must not be blurred</h3>
+      <p>
+        <strong>EU AI Act.</strong> Annex III §2 classifies as high-risk any AI serving as a
+        <em>safety component</em> in management or operation of critical infrastructure, explicitly
+        including electricity grids. Penalties reach €15M or 3% of global turnover. Annex III deployer
+        obligations (Arts. 9–17, 26) were set for 2 August 2026; a provisional political agreement of
+        7 May 2026 moves this to <strong>2 December 2027</strong>. Until formal publication the earlier
+        date remains legally binding on paper. Any US-parented utility with EU operations, and every
+        EU-domiciled vendor selling into this group, is affected. Track the omnibus outcome; do not
+        assume the delay is final.
+      </p>
+      <div class="note warn">
+        <p>
+          <strong>FERC / NERC — a critical distinction.</strong> A large, fast-moving 2026 regulatory
+          workstream concerns AI and the grid but is <em>not</em> about AI in utility workflows:
+        </p>
+        <ul>
+          <li>NERC's <strong>Level 3 Alert of 4 May 2026</strong> treats AI campuses and hyperscale data centers as dynamic grid actors, with seven Essential Actions covering load modeling, system studies, commissioning, ride-through analysis, fault recording and operational communications.</li>
+          <li><strong>FERC's order of 16 July 2026</strong> directs NERC to file mandatory reliability standards for integration of computational loads by <strong>31 December 2026</strong>, plus Rules of Procedure changes and registry criteria, with a Phase II work plan due <strong>1 March 2027</strong>. Work proceeds under <strong>NERC Project 2026-02</strong>.</li>
+        </ul>
+        <p>
+          That stream is about <strong>AI as a load</strong>. SAFERai.power is about <strong>AI as a
+          tool inside the utility</strong>. Conflating them is the most likely way for this initiative
+          to lose executive attention — leadership hears "AI and the grid," maps it to the data-center
+          interconnection fight, and disengages. Open every briefing by drawing this line. The two do
+          converge in one place worth watching: when a utility uses AI to <em>forecast or manage</em>
+          those computational loads, it is a SAFERai use case operating on a Project 2026-02 object.
+        </p>
+      </div>
+
+      <h3>AI security frameworks — the guardrail source material</h3>
+      <ul>
+        <li><strong>MITRE ATLAS</strong> — v5.1.0 (Nov 2025): 16 tactics, 84 techniques, 32 mitigations, 42 case studies, with agentic techniques added through February 2026. Full-lifecycle adversary view across training pipelines, model files, inference APIs and data supply chains.</li>
+        <li><strong>OWASP LLM Top 10</strong> — LLM01 prompt injection, LLM06 excessive agency, LLM07 insecure plugin design and LLM08 excessive autonomy are the four that matter most for utility agentic deployments.</li>
+        <li><strong>OWASP Agentic Security Initiative</strong> — threat taxonomy across agent design, memory, planning &amp; autonomy, tool use, and deployment/operations.</li>
+      </ul>
+      <p>
+        These are complementary: OWASP prioritizes risks, ATLAS supplies techniques to test and detect.
+        Together they are roughly 80% of a ready-made guardrail catalog. <strong>Harvest, do not
+        author.</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section class="clause" id="s4">
+    <div class="rail"><span class="clause-num">04</span></div>
+    <div>
+      <h2>What other industries have already solved</h2>
+      <p>
+        This is where the 2,000-hour budget gets rescued. Four sectors have spent decades and billions
+        solving structurally identical problems. Ranked by <em>transferability per hour of effort</em>.
+      </p>
+
+      <div class="steals">
+        <article class="steal">
+          <span class="steal-rank">RANK 01 · STRUCTURAL</span>
+          <h5>The goal-based safety case</h5>
+          <p class="src">UL 4600 · Automotive</p>
+          <p>
+            UL 4600 solved exactly SAFERai's problem: <strong>how do you write a standard for a system
+            whose behavior you cannot fully specify in advance?</strong> Its answer is to standardize
+            not the system but the <em>argument</em> — a structured, evidence-backed safety case, with
+            the standard governing the shape and rigor of the argument rather than the design.
+          </p>
+          <p>
+            It is explicitly permissive about which underlying standards you conform to, taking their
+            outputs as inputs. <strong>The AI System Risk File should be structured this way</strong>:
+            claim, argument, evidence — with required claims and acceptable evidence types set by tier.
+          </p>
+        </article>
+
+        <article class="steal">
+          <span class="steal-rank">RANK 02 · OPERATIONAL</span>
+          <h5>Predetermined Change Control Plans</h5>
+          <p class="src">FDA PCCP · Medical devices</p>
+          <p>
+            PCCP lets a manufacturer pre-specify and pre-authorize an <em>envelope of future model
+            changes</em> in the original submission: planned modifications, the methodology to
+            develop/validate/implement them, and an impact assessment.
+          </p>
+          <p>
+            The hardest unsolved problem in regulated AI is not initial approval — it is that models
+            get retrained, vendors ship updates, and foundation models change underneath you. Every
+            static approval regime breaks on this. <strong>Without a change envelope, the framework
+            will be abandoned within 18 months under its own review burden.</strong>
+          </p>
+        </article>
+
+        <article class="steal">
+          <span class="steal-rank">RANK 03 · CULTURAL</span>
+          <h5>Non-punitive information sharing</h5>
+          <p class="src">ASIAS &amp; INPO · Aviation, nuclear</p>
+          <p>
+            ASIAS fuses voluntarily reported safety data across government and industry under one
+            governing principle: <strong>information is used only for safety purposes, never for
+            punitive action.</strong> That protection is what makes the data flow. INPO — created by
+            the nuclear industry after Three Mile Island — runs confidential peer review, shared
+            performance indicators, and the EPIX failure database.
+          </p>
+          <p>
+            The framework is worth roughly nothing in year three if nobody reports what went wrong.
+            Utilities will not share incidents into a forum containing their regulator unless
+            protection is explicit and legally structured. <strong>Draft it before the first incident.</strong>
+          </p>
+        </article>
+
+        <article class="steal">
+          <span class="steal-rank">RANK 04 · PROCESS</span>
+          <h5>Tiered model risk management</h5>
+          <p class="src">SR 11-7 → SR 26-2 · Banking</p>
+          <p>
+            US banking has run mandatory, examined model risk management since 2011: model inventory,
+            risk tiering, independent validation proportional to risk, three lines of defense, ongoing
+            monitoring. <strong>SR 26-2 superseded it on 17 April 2026</strong> for the AI era.
+          </p>
+          <p>
+            Most transferable artifact: <strong>the model inventory</strong>. Banks proved a mandatory,
+            complete, tiered inventory is the foundation everything else rests on. SAFERai's "AI System
+            Registry" is the same object — copy the field structure.
+          </p>
+        </article>
+      </div>
+
+      <h4>What changed in SR 26-2, and why it matters here</h4>
+      <ul>
+        <li>Validation quality now depends on <strong>"the rigor and effectiveness of the review rather than on organizational structure"</strong> — validators may sit closer to development if rigor is demonstrable. A pragmatic loosening utilities, with far thinner validation benches than banks, should copy directly.</li>
+        <li><strong>Data is elevated to first-class risk</strong>: validation must reach training and reference data, lineage and representativeness — not just the fitted model.</li>
+        <li>Model definition tightened to <em>complex</em> systems applying statistical/economic/financial theory, excluding spreadsheets, deterministic rules and ordinary software. <strong>A crisp scope boundary is exactly what utilities need</strong> to stop the framework metastasizing across every script in the enterprise.</li>
+        <li><strong>Generative and agentic AI are explicitly out of scope</strong>, as "novel and rapidly evolving," leaving institutions to apply their own governance.</li>
+      </ul>
+      <div class="note">
+        <p>
+          That last point is a gift. <strong>US banking regulators looked at governing generative and
+          agentic AI and declined.</strong> SAFERai.power can occupy exactly that vacated ground with
+          sector specificity — and can credibly claim to be ahead of banking, which is a useful thing
+          to be able to tell a board.
+        </p>
+      </div>
+
+      <h4>Companion concepts to import with UL 4600</h4>
+      <ul>
+        <li><strong>ISO 21448 (SOTIF)</strong> — hazards arising when the system works exactly as designed but its performance is <em>insufficient</em> for the situation. This is the dominant AI failure mode in utility work and has no natural home in NIST AI RMF language.</li>
+        <li><strong>ISO/PAS 8800</strong> — road vehicles, safety and AI. Newer, narrower, worth tracking.</li>
+        <li><strong>Operational Design Domain</strong> — the explicitly bounded conditions under which a system is claimed to work. <strong>Rename it "Operating Envelope" and make it a mandatory risk-file field.</strong> Most utility AI incidents will be out-of-envelope operation, and no current utility practice names the envelope.</li>
+        <li><strong>GMLP 10 principles</strong> (FDA / Health Canada / MHRA, 2021) — rigorous software engineering, representative datasets, human-AI team performance, post-deployment monitoring. Short, readable, immediately adaptable.</li>
+      </ul>
+
+      <h3>Secondary sources worth mining</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Sector</th><th scope="col">Mechanism</th><th scope="col">Take</th><th scope="col">Caution</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Aviation certification</th><td>EUROCAE WG-114 / SAE G-34 → <strong>ARP6983/ED-324</strong>, 600+ participants</td><td>The only serious attempt at a <em>process standard</em> for certifying ML.</td><td>First version scoped to frozen, supervised-learning models. After years of effort, aviation could only certify frozen models — set expectations accordingly.</td></tr>
+            <tr><th scope="row">Aviation ops</th><td>EASA AI Roadmap; AI Concept Paper Issue 2 (Mar 2024), Level 1 &amp; 2 ML</td><td>The <strong>AI level taxonomy</strong> (assistance → human-AI teaming → autonomy) is a ready-made autonomy ladder. Adapt rather than invent.</td><td>Aircraft-centric; needs translation to grid operations.</td></tr>
+            <tr><th scope="row">Nuclear</th><td>NRC AI Strategic Plan (Sep 2025); Chief AI Officer, AI Governance Board, AI Steering Committee; US/Canada/UK trilateral principles</td><td>The <strong>organizational pattern</strong> — named AI officer, governance board, cross-office steering committee — is directly copyable as the recommended utility internal structure.</td><td>Nuclear moves slowly; do not import the pace.</td></tr>
+            <tr><th scope="row">Process industries</th><td>IEC 61511, CCPS, <strong>LOPA</strong></td><td>LOPA is the right mental model for the guardrail catalog: independent protection layers, each with credited risk reduction. Maps cleanly onto defense-in-depth.</td><td>AI layers are harder to credit quantitatively than a relief valve.</td></tr>
+            <tr><th scope="row">Maritime / offshore</th><td>DNV assurance-of-AI, class-society model</td><td>Third-party assurance as a service — relevant to who eventually certifies a risk file.</td><td>Commercial model may not suit a member consortium.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The synthesis</h3>
+      <p>The proposed spine of SAFERai.power, assembled from proven parts:</p>
+      <div class="spine">
+        <div class="spine-row"><b>UL 4600 safety-case structure</b><span>the shape of the AI System Risk File</span></div>
+        <div class="spine-row"><b>+ SOTIF / ODD "Operating Envelope"</b><span>the failure model and boundary conditions</span></div>
+        <div class="spine-row"><b>+ SR 11-7 / 26-2 tiered inventory</b><span>the AI System Registry and validation depth</span></div>
+        <div class="spine-row"><b>+ FDA PCCP change envelopes</b><span>how the framework survives model updates</span></div>
+        <div class="spine-row"><b>+ IEC 62443 zones &amp; conduits</b><span>where an AI system may live and what it may touch</span></div>
+        <div class="spine-row"><b>+ EASA AI levels</b><span>the autonomy ladder</span></div>
+        <div class="spine-row"><b>+ MITRE ATLAS / OWASP</b><span>the guardrail and test catalog</span></div>
+        <div class="spine-row"><b>+ ASIAS / INPO protections</b><span>non-punitive incident sharing</span></div>
+        <div class="spine-row"><b>+ NIST AI RMF / ISO 42001</b><span>the outer vocabulary and audit-facing shell</span></div>
+      </div>
+      <p>
+        Every element is proven in another regulated sector. <strong>Not one requires original
+        research.</strong> That is what makes 2,000 hours sufficient.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section class="clause" id="s5">
+    <div class="rail"><span class="clause-num">05</span></div>
+    <div>
+      <h2>Proposed operating strategy for the member utilities</h2>
+
+      <p class="thesis">Harvest, tier, test, ratify. Do not author.</p>
+
+      <p>
+        The group's scarce resource is expert attention, not ideas. Ideas are abundant and mostly
+        already written down in clause 04. The value SAFERai.power adds is <strong>sector-specific
+        judgment</strong>: which proven mechanisms apply to a distribution-grid vision model, at what
+        threshold, with what evidence, and what "good enough to deploy" means for each tier.
+      </p>
+      <p>
+        That judgment can only come from the 25 members, and it is the only thing that can only come
+        from them. Every hour spent drafting prose that already exists elsewhere is an hour stolen from
+        the one thing the group is uniquely able to do.
+      </p>
+
+      <h3>Governance structure</h3>
+      <p>
+        <strong>Steering Committee</strong> — 8–10 people, monthly, 60 minutes. Utility-majority.
+        Chartered to make three decisions and no others: scope, ratification, publication. Vendors
+        participate but do not vote on ratification of evidence requirements; the conflict is obvious,
+        and pre-empting it avoids a fight in month four. NERC participates in an observer/advisory
+        capacity with that role <em>written down</em>, so members know what is and is not being reported.
+      </p>
+      <p>
+        <strong>Four Pods</strong> — ~6 organizations each, weekly async plus biweekly 90-minute
+        working sessions. Small enough to decide, large enough to be representative. Each pod owns one
+        deliverable end-to-end with a named utility lead and an EPRI facilitator.
+      </p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Pod</th><th scope="col">Owns</th><th scope="col">Anchor sources to harvest</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">A — Tiering &amp; Scope</th><td>Use-case tiering rubric; scope boundary; consequence / autonomy / context taxonomy</td><td>SR 26-2 scope definition; EASA AI levels; OPAI's 250+ use cases</td></tr>
+            <tr><th scope="row">B — Evidence &amp; Risk File</th><td>Risk File template (provider + deployer); minimum evidence package; change envelope</td><td>UL 4600; ISO/IEC 42005; FDA PCCP + GMLP</td></tr>
+            <tr><th scope="row">C — Test &amp; Guardrails</th><td>TEVV protocols by tier; guardrail catalog; Operating Envelope definition</td><td>MITRE ATLAS; OWASP LLM Top 10 + ASI; IEC 62443; LOPA; L2RPN benchmarks</td></tr>
+            <tr><th scope="row">D — Operate &amp; Learn</th><td>Monitoring triggers; incident taxonomy; runbooks; <strong>data-sharing legal protections</strong></td><td>ASIAS; INPO / EPIX; NERC CIP incident reporting</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p>
+          <strong>Pod D starts first, and starts on legal work</strong> — the non-punitive sharing
+          agreement has the longest lead time and gates the initiative's long-term value.
+        </p>
+      </div>
+      <p>
+        <strong>Assignment principle:</strong> compose pods for <em>diversity of operating context</em>,
+        not comfort. Each should contain at least one large IOU, one public power or co-op entity, one
+        market/reliability organization, and one technology member. A pod of five large IOUs will
+        produce a rubric that only works at large IOUs.
+      </p>
+
+      <h3>How to spend the 80 hours</h3>
+      <p>
+        Publishing this allocation at kickoff prevents the common failure where members send whoever is
+        free to whichever meeting, and no artifact is ever produced.
+      </p>
+      <div class="scroller">
+        <table class="totals">
+          <thead><tr><th scope="col">Activity</th><th scope="col" class="num">Hours</th><th scope="col">Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Contribute 2 real in-flight use cases + draft risk files</td><td class="num">16</td><td><strong>The core contribution.</strong> Real systems, real evidence gaps, real vendors.</td></tr>
+            <tr><td>Pod working sessions (6 × 90 min + prep)</td><td class="num">20</td><td>Where reconciliation happens.</td></tr>
+            <tr><td>Red-team another member's risk files</td><td class="num">16</td><td><strong>The highest-value hour in the program</strong> — see below.</td></tr>
+            <tr><td>Internal socialization (own CISO, risk, ops leadership)</td><td class="num">12</td><td>Adoption work. Non-optional — a framework nobody inside the utility has seen will not be used.</td></tr>
+            <tr><td>Steering / plenary / review</td><td class="num">8</td><td></td></tr>
+            <tr><td>Reserve</td><td class="num">8</td><td></td></tr>
+            <tr><td>Total</td><td class="num">80</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Note the shape: <strong>32 of 80 hours produce or stress-test concrete artifacts, and only 20
+        are spent in meetings.</strong> Invert that ratio and the initiative fails.
+      </p>
+
+      <h3>Cadence — a 26-week path to a ratified MVP</h3>
+      <div class="phases">
+        <div class="phase">
+          <div class="phase-wk">Wk 1–2</div>
+          <div>
+            <h5>Charter &amp; harvest</h5>
+            <p>Pods formed. Scope boundary drafted — starting with what is <em>not</em> an AI system. Clause 04 source pack distributed. <strong>Legal work on data-sharing protections begins.</strong></p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 3–6</div>
+          <div>
+            <h5>Draft v0.1 from harvested parts</h5>
+            <p>Tiering rubric v0.1 and Risk File template v0.1, assembled from UL 4600 / ISO 42005 / SR 26-2 / PCCP. Explicitly a mash-up, explicitly rough.</p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 7–12</div>
+          <div>
+            <h5>Apply to real systems</h5>
+            <p>Every member completes risk files for <strong>2 real in-flight use cases</strong>. Target: <strong>~50 completed files</strong>. This corpus is the initiative's central asset.</p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 13–16</div>
+          <div>
+            <h5>Calibrate</h5>
+            <p>Measure inter-rater reliability on tiering; reconcile disagreements. This is where the sector-specific judgment actually gets made — protect this phase from schedule pressure.</p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 17–20</div>
+          <div>
+            <h5>Red-team</h5>
+            <p>Cross-member review. Each member attacks another's files: what evidence is missing, what would you not accept from a vendor, where does the rubric produce an absurd answer?</p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 21–24</div>
+          <div>
+            <h5>v1.0 + tooling</h5>
+            <p>Ratify. Publish the tiering rubric and Risk File template. Release the assessment tool as open source.</p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">Wk 25–26</div>
+          <div>
+            <h5>Land it</h5>
+            <p>Executive briefing pack; per-member internal adoption plan; vendor-facing one-pager.</p>
+          </div>
+        </div>
+      </div>
+      <p>
+        Two scheduling notes. EPRI's <strong>Summer Seminar</strong> and the <strong>AI and Electric
+        Power Summit</strong> are natural ratification and visibility milestones — anchor the roadmap to
+        them rather than to abstract quarters. And <strong>NERC Project 2026-02</strong> (standards
+        filing by 31 Dec 2026, Phase II plan by 1 Mar 2027) sets the tempo the sector will be watching;
+        being visibly organized on AI assurance while that proceeds is worth real credibility.
+      </p>
+
+      <h3>The mechanism that makes it work: adversarial evidence review</h3>
+      <p>If one practice is imported from this document, make it this one.</p>
+      <p>
+        In weeks 17–20, each member is assigned another member's completed risk files and asked one
+        question: <strong>"Would you deploy this system in your territory on this evidence? If not,
+        what is missing?"</strong>
+      </p>
+      <ul>
+        <li>It converts vague standard-writing into a concrete, answerable decision. People argue endlessly about principles and decide quickly about artifacts.</li>
+        <li>It surfaces the real acceptance thresholds, which are tacit and never survive being asked for in the abstract.</li>
+        <li>It builds the peer-review muscle INPO proved is the durable mechanism in a safety-critical industry.</li>
+        <li>It produces the calibration data that turns a rubric into a standard.</li>
+      </ul>
+      <div class="note">
+        <p>
+          <strong>Where two utilities disagree about whether the evidence is sufficient, that is the
+          finding.</strong> Those disagreements are the sector's actual open questions, and enumerating
+          them is more valuable than any amount of smooth consensus prose.
+        </p>
+      </div>
+
+      <h3>Failure modes to design against</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Failure mode</th><th scope="col">Signal</th><th scope="col">Countermeasure</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Becomes a document review committee</th><td>Meetings spent on wording; no completed risk files by week 12</td><td>Hard gate at week 12 — 50 files, or the schedule stops and the pod structure is rebuilt</td></tr>
+            <tr><th scope="row">Vendor capture</th><td>Evidence requirements soften toward what current products can supply</td><td>Utility-only vote on ratification; publish minority positions</td></tr>
+            <tr><th scope="row">Regulatory chill</th><td>Members won't discuss real incidents with NERC present</td><td>Legal protections drafted in month one; written observer role; members-only channel for pre-competitive discussion</td></tr>
+            <tr><th scope="row">Boiling the ocean</th><td>Scope expands to all AI everywhere in the utility</td><td>SR 26-2-style hard exclusions in week 2; MVP covers material use cases only</td></tr>
+            <tr><th scope="row">Framework goes stale</th><td>v1.0 published, nothing changes for 18 months</td><td>PCCP-style change envelope <em>for the framework itself</em> (clause 08)</td></tr>
+            <tr><th scope="row">Confusion with the data-center load debate</th><td>Executives disengage — "we already have a team on AI and the grid"</td><td>Open every briefing with the clause 03 distinction</td></tr>
+            <tr><th scope="row">The 80 hours never materialize</th><td>Members attend but don't produce</td><td>Publish the allocation at kickoff; report per-member artifact completion, not attendance</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 06 ================= -->
+  <section class="clause" id="s6">
+    <div class="rail"><span class="clause-num">06</span></div>
+    <div>
+      <h2>The MVP</h2>
+      <p class="thesis">
+        Tier &amp; File v1.0 — a use-case tiering rubric and a minimum evidence package, calibrated
+        against ~50 real utility AI use cases.
+      </p>
+      <p>
+        That is all. Not the registry. Not the open-source toolkit. Not the monitoring runbooks. Not a
+        certification scheme.
+      </p>
+
+      <h3>Why this and not more</h3>
+      <p>The MVP must be the thinnest artifact that <strong>changes a real decision</strong>. Tier &amp; File does, on day one:</p>
+      <ul>
+        <li>A utility can classify an AI use case and know what evidence to demand — <strong>the question every member is being asked internally right now, with no good answer.</strong></li>
+        <li>A utility can hand the template to a vendor and get comparable evidence back. Twenty-five utilities asking for the <em>same</em> evidence package is a market-moving act, and it costs the group nothing beyond agreeing on the template.</li>
+        <li>It requires no software, no infrastructure and no funding beyond SME time — so it cannot be blocked by procurement.</li>
+        <li>Every subsequent deliverable depends on it. A registry with no tiering schema has no columns. Test protocols with no tiers have no acceptance criteria. Monitoring triggers with no evidence baseline have nothing to monitor against. <strong>Tier &amp; File is on the critical path for everything else.</strong></li>
+      </ul>
+
+      <h3>Contents of the MVP</h3>
+      <p>
+        <strong>1. Scope boundary (1 page).</strong> What is and is not an "AI system" for these
+        purposes. Follow SR 26-2: exclude deterministic rules, ordinary software, simple analytics.
+        Being explicit about what is <em>out</em> is what keeps the framework usable.
+      </p>
+      <p>
+        <strong>2. Tiering rubric (2 pages).</strong> Four dimensions, as EPRI has already framed them:
+      </p>
+      <ul>
+        <li><strong>Consequence</strong> — what happens when it is wrong (customer inconvenience → equipment damage → safety → reliability event)</li>
+        <li><strong>Autonomy</strong> — the EASA-derived ladder: advisory → human-in-the-loop → human-on-the-loop → autonomous-with-envelope</li>
+        <li><strong>Operating context</strong> — IT / OT / customer-facing / market-facing; reversibility of the action</li>
+        <li><strong>Exposure</strong> — how many customers, assets or decisions are touched</li>
+      </ul>
+      <p>
+        Producing <strong>Tier 1–4</strong>, where tier determines evidence depth, validation
+        independence and monitoring intensity. Borrow the proportionality principle directly from SR 26-2.
+      </p>
+      <p>
+        <strong>3. AI System Risk File template</strong> — structured as a UL 4600-style safety case
+        (claim, argument, evidence) with EPRI's stated minimum evidence fields:
+      </p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Field</th><th scope="col">Source of the pattern</th></tr></thead>
+          <tbody>
+            <tr><td>Purpose and intended use</td><td>ISO/IEC 42005</td></tr>
+            <tr><td><strong>Operating Envelope</strong> — bounded conditions of valid operation</td><td><strong>ODD from AV/aviation. Add this — it is the field most likely to be missing today.</strong></td></tr>
+            <tr><td>Data provenance and representativeness</td><td>SR 26-2 data-as-first-class-risk</td></tr>
+            <tr><td>Capabilities and limitations</td><td>GMLP</td></tr>
+            <tr><td>Human oversight model</td><td>EASA AI levels</td></tr>
+            <tr><td>TEVV performed</td><td>ARP6983 / NIST AI RMF MEASURE</td></tr>
+            <tr><td>Deployment conditions and guardrails</td><td>IEC 62443 zones &amp; conduits; LOPA</td></tr>
+            <tr><td>Monitoring plan and triggers</td><td>GMLP post-deployment monitoring</td></tr>
+            <tr><td><strong>Change envelope</strong> — what may change without reassessment</td><td><strong>FDA PCCP. The field that determines whether this framework survives contact with reality.</strong></td></tr>
+            <tr><td>Incident history and reporting path</td><td>ASIAS / NERC CIP</td></tr>
+            <tr><td>Reassessment triggers</td><td>ISO/IEC 5338</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>4. Two worked examples.</strong> One Tier 4 — say, agentic switching support in
+        distribution operations. One Tier 1 — say, document summarization in back office. Worked
+        examples are what people copy; the template is what they cite.
+      </p>
+
+      <h3>Acceptance criteria</h3>
+      <p>The MVP is done when it passes these, not when the document looks finished.</p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Criterion</th><th scope="col">Threshold</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Corpus</th><td>≥50 completed risk files across ≥20 member organizations</td></tr>
+            <tr><th scope="row">Inter-rater reliability</th><td>Two independent utilities tier the same use case identically ≥80% of the time</td></tr>
+            <tr><th scope="row">Usability</th><td>A Tier 2 risk file completed by a practitioner in &lt;4 hours using existing documentation</td></tr>
+            <tr><th scope="row">Real-world use</th><td>≥5 members report using it in an actual procurement or deployment decision</td></tr>
+            <tr><th scope="row">Vendor viability</th><td>≥3 technology members confirm they can produce the provider-side package for a real product</td></tr>
+            <tr><th scope="row">Coverage</th><td>Rubric produces a defensible tier for ≥90% of the OPAI 250+ use-case corpus</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note warn">
+        <p>
+          The <strong>vendor-viability</strong> criterion is the one most likely to be skipped and most
+          likely to matter. An evidence package no vendor can produce is not a standard — it is a wish.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 ================= -->
+  <section class="clause" id="s7">
+    <div class="rail"><span class="clause-num">07</span></div>
+    <div>
+      <h2>After the MVP</h2>
+      <p>Four releases, each gated on adoption of the prior one rather than on elapsed time.</p>
+
+      <div class="phases">
+        <div class="phase">
+          <div class="phase-wk">R2 · +6mo</div>
+          <div>
+            <h5>Test &amp; Guardrail</h5>
+            <p>
+              Tiered <strong>TEVV protocols</strong> with acceptance criteria per tier, harvested from
+              ATLAS, OWASP and the L2RPN benchmark tradition, run in the OPAI Sandbox — the
+              infrastructure already exists. A <strong>guardrail catalog</strong> structured as
+              LOPA-style independent protection layers: design-time (data/model constraints),
+              deploy-time (62443 zone placement, permissions, rate limits), runtime (output validation,
+              human confirmation gates, circuit breakers), organizational (approval authority,
+              kill-switch ownership). Plus the <strong>autonomy ladder v1.0</strong> with guardrails
+              required to move up each rung — the deliverable that will matter most in 2027, as agentic
+              systems arrive and the question becomes "what must be true before we let it act
+              unsupervised?" Reference architectures for the 3–5 highest-value OPAI use cases.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">R3 · +12mo</div>
+          <div>
+            <h5>Registry &amp; Toolkit</h5>
+            <p>
+              <strong>AI System Registry</strong> schema and prototype — the SR 11-7 model inventory,
+              adapted and federated: each utility holds its own instance, only anonymized aggregates
+              are shared. <strong>Open-source assessment tool</strong> implementing tiering and risk-file
+              generation, with API hooks into ITSM and procurement — adoption dies at manual data entry,
+              so integration is the feature. <strong>Vendor evidence conformance profile</strong>: a
+              stable spec a vendor builds to once and satisfies all 25 utilities. This is where the
+              group's collective buying power converts into real market change.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">R4 · +18mo</div>
+          <div>
+            <h5>Operate &amp; Learn</h5>
+            <p>
+              Monitoring runbooks and drift/degradation triggers by tier. An <strong>AI incident
+              taxonomy</strong> — a shared vocabulary for what went wrong, prerequisite for everything
+              else. The <strong>non-punitive incident exchange</strong> (the ASIAS/INPO analogue) on the
+              legal foundation laid in week 1 — highest long-term value, longest lead time. Anonymized
+              sector performance indicators, on the EPIX pattern.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-wk">R5 · +24mo</div>
+          <div>
+            <h5>Stewardship</h5>
+            <p>
+              Transition from project to enduring stewardship (EPRI's stated end state). Formal
+              versioning, deprecation policy, conformance assessment. Options for external recognition:
+              ISO/IEC 42001 mapping for audit reuse, a documented path toward NERC recognition, EU AI
+              Act Annex III evidence alignment for members with EU exposure. Decision point — does the
+              group certify, or only publish? <strong>Recommend publishing and letting third parties
+              certify</strong>: a member consortium that certifies its own members has a credibility
+              problem no amount of process discipline fixes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 08 ================= -->
+  <section class="clause" id="s8">
+    <div class="rail"><span class="clause-num">08</span></div>
+    <div>
+      <h2>Staying ahead of the safety curve</h2>
+      <p>
+        The hard problem is not writing v1.0. It is that AI capability moves faster than any standards
+        process, and a framework written against 2026 systems will be actively misleading against 2028
+        systems. Five mechanisms, in priority order.
+      </p>
+
+      <h3>1 · A change envelope for the framework itself</h3>
+      <p>Apply FDA's PCCP logic reflexively. The framework should specify, in advance:</p>
+      <ul>
+        <li>What changes by editorial update (examples, references, worked cases) — no ratification needed.</li>
+        <li>What requires pod review (thresholds, evidence fields, guardrail entries) — 30-day cycle.</li>
+        <li>What requires full ratification (tier definitions, scope boundary, autonomy ladder).</li>
+        <li><strong>Predefined triggers that force reassessment regardless of schedule.</strong></li>
+      </ul>
+      <p>
+        Without this, v1.0 sits untouched for two years and is then replaced wholesale by a v2.0 effort
+        costing as much as the original. Nearly every industry framework fails this way.
+      </p>
+
+      <h3>2 · Capability-triggered review</h3>
+      <p>
+        Time-based review — "we revisit annually" — is the wrong trigger, because capability does not
+        arrive annually. Define <strong>capability thresholds</strong> that automatically trigger
+        re-tiering:
+      </p>
+      <ul>
+        <li>A model class gains a materially new capability (e.g. reliable multi-step tool use in OT contexts)</li>
+        <li>A deployed system's autonomy level increases</li>
+        <li>A new modality enters the operating environment</li>
+        <li>A vendor's underlying foundation model changes materially</li>
+        <li>An incident anywhere in the sector reveals a failure mode outside the current taxonomy</li>
+      </ul>
+      <p>
+        Each trigger names an owner and a clock. This is the difference between a framework that tracks
+        reality and one that describes 2026 forever.
+      </p>
+
+      <h3>3 · A standing red team</h3>
+      <p>
+        A small rotating cell — 2–3 people, refreshed quarterly across members — whose standing job is
+        to break <em>the framework</em>, not the systems: find use cases the rubric tiers absurdly, find
+        evidence packages that pass while the system is obviously unsafe, find guardrails that are
+        theatre rather than protection, and track ATLAS and OWASP updates for techniques the catalog
+        misses.
+      </p>
+      <p>
+        Red-team findings should be <strong>published inside the consortium as first-class
+        artifacts</strong>, not buried. A framework with a known, documented list of its own weaknesses
+        is far more trustworthy — and far more useful — than one claiming completeness.
+      </p>
+
+      <h3>4 · Horizon scanning, reusing what EPRI already runs</h3>
+      <p>
+        EPRI already operates a <strong>Technology Radar and Pulse Report</strong> capability. Do not
+        build a parallel one — attach an AI-assurance lens to it, with a standing quarterly item into
+        the Steering Committee covering model capability, regulatory movement (NERC Project 2026-02, EU
+        AI Act omnibus, NIST SP 800-53 AI overlays, ISO/IEC TR 5469), cross-sector standards
+        (ARP6983/ED-324 progress, ISO/PAS 8800), and incidents in adjacent sectors.
+      </p>
+      <p>
+        <strong>Adjacent-sector incidents are the cheapest possible learning.</strong> Aviation, medical
+        and financial AI failures are public, well-investigated and structurally similar. Reading
+        someone else's accident report costs an hour.
+      </p>
+
+      <h3>5 · Guardrails as the primary control, standards as the secondary</h3>
+      <p class="thesis">
+        In a fast-moving field, runtime guardrails scale better than pre-deployment standards.
+      </p>
+      <p>
+        Pre-deployment assurance assumes you can characterize the system before it operates. That
+        assumption weakens every year as systems become more general and more agentic. Runtime
+        guardrails — bounded permissions, output validation, human confirmation gates, circuit
+        breakers, rate limits, IEC 62443 zone containment — do not depend on predicting behavior. They
+        constrain consequences regardless of behavior.
+      </p>
+      <p>
+        The evidence suggests this is cheap: bounded agents constrained by validation and optional human
+        approval have been measured running 13–18× faster than manual operation. <strong>Guardrails
+        cost very little speed.</strong> That empirical point is the one to put in front of an
+        operations executive who expects assurance to mean delay.
+      </p>
+      <div class="note">
+        <p>
+          <strong>Practical implication:</strong> as tier rises, the framework should shift weight from
+          <em>evidence about the model</em> toward <em>constraints on what the system may do</em>. For
+          Tier 4, the binding question should not be "how well was this model validated?" but
+          <strong>"what is the worst thing this system can do before a human stops it, and is that
+          acceptable?"</strong>
+        </p>
+        <p>
+          That question is answerable today, stays answerable as capability grows, and is exactly the
+          question a utility operations leader already knows how to reason about. Building the framework
+          around it is what keeps the group ahead of the curve rather than perpetually documenting the
+          last generation of systems.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 09 ================= -->
+  <section class="clause" id="s9">
+    <div class="rail"><span class="clause-num">09</span></div>
+    <div>
+      <h2>Open questions to close with EPRI</h2>
+      <p>Verification items — several are load-bearing for the strategy above.</p>
+      <ol>
+        <li><strong>Roadmap dates.</strong> What are the actual phase boundaries? The 26-week plan assumes the MVP is achievable within roughly the first phase; confirm or re-baseline.</li>
+        <li><strong>Governance.</strong> Is a pod/steering structure already defined? Is there a utility-only decision forum, and is NERC's role documented?</li>
+        <li><strong>Data-sharing protections.</strong> Has legal work begun on non-punitive incident sharing? <em>Longest-lead item, most likely to be underestimated.</em></li>
+        <li><strong>Membership.</strong> Is the founding cohort closed? What is the cost beyond SME time, and what exactly does SDF cover?</li>
+        <li><strong>IP and licensing.</strong> Which open-source license for the toolkit? Who owns contributed risk files, and how are they anonymized?</li>
+        <li><strong>OPAI interface.</strong> How do SAFERai deliverables gate OPAI use-case development and AI for Power Challenge demonstrations? Is passing a risk file a precondition for sandbox promotion?</li>
+        <li><strong>Scope on agentic systems.</strong> In scope for v1.0, or deferred? Given SR 26-2 explicitly deferred them, this is the most consequential scope decision the group will make — and the biggest opportunity.</li>
+        <li><strong>Regulatory intent.</strong> Is the goal explicitly to inform future NERC standards, or to remain voluntary? This changes how carefully language must be drafted from day one.</li>
+        <li><strong>International.</strong> How does the Eurelectric/EPRI collaboration interact, particularly for EU AI Act Annex III alignment?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ================= 10 ================= -->
+  <section class="clause" id="s10">
+    <div class="rail"><span class="clause-num">10</span></div>
+    <div>
+      <h2>Recommended immediate actions</h2>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col" class="num">#</th><th scope="col">Action</th><th scope="col">Owner</th><th scope="col">Timing</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>Retrieve <code>msites.epri.com/saferai</code> directly; confirm roadmap, governance, phase dates</td><td>Program lead</td><td class="wk">Week 1</td></tr>
+            <tr><td class="num">2</td><td>Obtain the OPAI 250+ use-case corpus — the calibration set for the tiering rubric</td><td>Pod A</td><td class="wk">Week 1</td></tr>
+            <tr><td class="num">3</td><td><strong>Start legal work on non-punitive incident sharing</strong> — longest lead item</td><td>Pod D + counsel</td><td class="wk">Week 1</td></tr>
+            <tr><td class="num">4</td><td>Assemble and circulate the clause 04 source pack (UL 4600, ISO 42005, PCCP, GMLP, SR 26-2, EASA Issue 2, ATLAS, OWASP ASI)</td><td>EPRI facilitators</td><td class="wk">Week 2</td></tr>
+            <tr><td class="num">5</td><td>Publish the 80-hour allocation and the week-12 gate at kickoff</td><td>Steering</td><td class="wk">Week 2</td></tr>
+            <tr><td class="num">6</td><td>Watch the DCFlex and L2RPN videos as operating-model references</td><td>Pods A–D</td><td class="wk">Week 2</td></tr>
+            <tr><td class="num">7</td><td>Each member names 2 real in-flight AI use cases they will contribute</td><td>All members</td><td class="wk">Week 3</td></tr>
+            <tr><td class="num">8</td><td>Draft the scope boundary — what is <em>not</em> an AI system — modeled on SR 26-2</td><td>Pod A</td><td class="wk">Week 3</td></tr>
+            <tr><td class="num">9</td><td>Brief executives using the clause 03 distinction to separate this from the data-center load debate</td><td>Program lead</td><td class="wk">Week 3</td></tr>
+            <tr><td class="num">10</td><td>Establish a quarterly horizon-scan feed off EPRI's existing Technology Radar</td><td>Steering</td><td class="wk">Week 4</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SOURCES ================= -->
+  <section class="clause" id="src">
+    <div class="rail"><span class="clause-num">SRC</span></div>
+    <div class="sources">
+      <h2>Sources</h2>
+
+      <h3>EPRI · SAFERai.power · OPAI</h3>
+      <p>
+        <a href="https://www.globenewswire.com/news-release/2026/08/06/3340219/0/en/EPRI-Launches-Effort-to-Reduce-Risk-in-AI-Power-Sector-Deployment.html">EPRI Launches Effort to Reduce Risk in AI Power Sector Deployment (GlobeNewswire, 6 Aug 2026)</a> ·
+        <a href="https://www.manilatimes.net/2026/08/06/tmt-newswire/globenewswire/epri-launches-effort-to-reduce-risk-in-ai-power-sector-deployment/2400036">Manila Times mirror</a> ·
+        <a href="https://msites.epri.com/saferai">SAFERai microsite</a> ·
+        <a href="https://openpowerai.org/">Open Power AI Consortium</a> ·
+        <a href="https://openpowerai.org/about">About</a> ·
+        <a href="https://openpowerai.org/consortium-membership">Membership</a> ·
+        <a href="https://www.openpowerai.org/events">Events</a> ·
+        <a href="https://openpowerai.org/sites/g/files/fryaxh296/files/2026-05/OPAI%20Use%20Case%20Working%20Group_Circular%20Solar%20May.pdf">OPAI Use Case Workstream survey results</a> ·
+        <a href="https://openpowerai.org/sites/g/files/fryaxh296/files/2025-12/Domain%20Specific%20Model%20Kickoff.pdf">Domain-Specific Model kickoff</a> ·
+        <a href="https://www.epri.com/about/media-resources/press-release/yglqo5dymdh2nonjvdgqmmpgplyyj826">OPAI press release</a> ·
+        <a href="https://www.epri.com/thought-leadership/artificial-intelligence">EPRI AI thought leadership</a> ·
+        <a href="https://www.epri.com/thought-leadership/artificial-intelligence/events">AI events</a> ·
+        <a href="https://epri.brightidea.com/AIforPower2026">AI for Power 2026 Challenge</a> ·
+        <a href="https://www.aielectricpower.com/">AI &amp; Electric Power Summit</a> ·
+        <a href="https://www.epri.com/pages/sa/summer-seminar">Summer Seminar</a> ·
+        <a href="https://powering-intelligence.epri.com/">Powering Intelligence 2026</a>
+      </p>
+      <p>
+        Research products:
+        <a href="https://www.epri.com/research/products/000000003002033653">AI Readiness in Utilities</a> ·
+        <a href="https://www.epri.com/research/products/000000003002010236">AI: Concepts for Electric Power</a> ·
+        <a href="https://www.epri.com/research/products/000000003002017143">Introduction to AI, Use Cases and Requirements</a> ·
+        <a href="https://www.epri.com/research/products/000000003002033669">Scaling Intelligence</a> ·
+        <a href="https://www.epri.com/research/products/3002028905">AI and Data Center Energy</a>
+      </p>
+      <p>
+        Coverage:
+        <a href="https://www.utilitydive.com/news/epri-launches-consortium-to-develop-power-sector-ai-applications/743190/">Utility Dive — consortium launch</a> ·
+        <a href="https://www.utilitydive.com/news/epri-open-power-ai-consortium-grid-modernization-data/745730/">Utility Dive — data sharing</a> ·
+        <a href="https://www.latitudemedia.com/news/epri-launches-consortium-to-wrangle-the-wild-west-of-power-sector-ai-models/">Latitude Media</a> ·
+        <a href="https://blogs.nvidia.com/blog/open-power-ai-consortium">NVIDIA</a> ·
+        <a href="https://www.tdworld.com/electric-utility-operations/tools-and-technologies/news/55276361/epri-launches-open-power-ai-consortium-to-advance-ai-applications-in-the-energy-sector">T&amp;D World</a> ·
+        <a href="https://www.einpresswire.com/article_print/856055157/from-brussels-to-the-bay-eurelectric-and-epri-collaborate-to-drive-ai-innovation-in-europe-s-energy-sector">Eurelectric &amp; EPRI</a>
+      </p>
+
+      <h3>Video</h3>
+      <p>
+        <a href="https://www.youtube.com/user/EPRIvideos">EPRI channel</a> ·
+        <a href="https://www.youtube.com/watch?v=3szqhJy71EM">DCFlex</a> ·
+        <a href="https://www.youtube.com/watch?v=WOt8xgpC370">L2RPN</a> ·
+        <a href="https://www.youtube.com/watch?v=ElFf_E0uCG8">AI-Effect Podcast</a> ·
+        <a href="https://www.youtube.com/watch?v=7U-NvEfKVfc">DGX Spark</a> ·
+        <a href="https://www.youtube.com/watch?v=xjeWH6L7HYk">First AI Summit highlights</a> ·
+        <a href="https://www.youtube.com/watch?v=s9krSx4-eiU">AI.EPRI</a> ·
+        <a href="https://www.youtube.com/watch?v=wsW_sPEMVFE">Virtual Roundtable</a> ·
+        <a href="https://www.youtube.com/watch?v=xb98kEuCb1U">AI Summit 2022</a> ·
+        <a href="https://www.youtube.com/watch?v=ckNJ1IpnzYM">Technology Radar</a>
+      </p>
+
+      <h3>Standards — NIST / ISO / IEC</h3>
+      <p>
+        <a href="https://www.glacis.io/guide-nist-ai-rmf">NIST AI RMF implementation guidance</a> ·
+        <a href="https://docs.modulos.ai/frameworks/nist-ai-rmf">AI RMF complete guide</a> ·
+        <a href="https://neuraltrust.ai/blog/nist-ai-rmf-implementation-guide">Enterprise implementation guide</a> ·
+        <a href="https://www.iso.org/standard/42005">ISO/IEC 42005:2025</a> ·
+        <a href="https://www.aarc-360.com/understanding-iso-iec-42005-2025/">Understanding ISO/IEC 42005</a> ·
+        <a href="https://aisecurityandsafety.org/en/frameworks/iso-iec-42005/">42005 framework entry</a> ·
+        <a href="https://www.bsigroup.com/en-US/products-and-services/standards/iso-42001-ai-management-system/">ISO/IEC 42001 (BSI)</a> ·
+        <a href="https://www.schellman.com/blog/iso-certifications/how-to-assess-and-treat-ai-risks-and-impacts-with-iso42001">Assessing AI risks with 42001</a> ·
+        <a href="https://www.iso.org/sectors/it-technologies/ai">ISO AI sector page</a> ·
+        <a href="https://www.iec.ch/blog/artificial-intelligence-standards-how-iec-contributes">IEC on AI standards</a> ·
+        <a href="https://assets.iec.ch/public/acos/IEC%2061508%20&amp;%20Functional%20Safety-2022.pdf">IEC 61508 overview</a> ·
+        <a href="https://en.wikipedia.org/wiki/IEC_61511">IEC 61511</a> ·
+        <a href="https://electrical.theiet.org/media/ifbjt25i/the-application-of-artificial-intelligence-in-functional-safety-v9.pdf">IET — AI in Functional Safety</a> ·
+        <a href="https://www.kenexis.com/artificial-intelligence-in-safety-systems-is-coming/">AI in Safety Systems is Coming</a>
+      </p>
+
+      <h3>Regulatory — FERC / NERC / EU</h3>
+      <p>
+        <a href="https://www.powermag.com/ferc-orders-mandatory-nerc-reliability-standards-for-data-center-and-other-computational-loads/">FERC orders mandatory standards for computational loads</a> ·
+        <a href="https://www.powermag.com/ferc-acts-on-four-reliability-standards-probes-ai-and-data-center-load-forecasting/">FERC probes AI and data center load forecasting</a> ·
+        <a href="https://www.datacenterfrontier.com/energy/article/55376679/why-nerc-now-sees-ai-data-centers-as-grid-actors">Why NERC sees AI data centers as grid actors</a> ·
+        <a href="https://ampyxcyber.com/blog/embracing-ai-for-the-electric-grid-insights-from-nerc">NERC guidance on AI in the grid</a> ·
+        <a href="https://www.eenews.net/articles/ai-boom-sparks-rare-warning-of-significant-risks-to-grid/">E&amp;E News — rare grid warning</a> ·
+        <a href="https://www.bakerbotts.com/thought-leadership/publications/2026/march/the-eu-ai-act">EU AI Act for energy executives</a> ·
+        <a href="https://www.mccannfitzgerald.com/knowledge/construction-and-infrastructure/critical-infrastructure-spotlight-eu-ai-act-draft-guidelines-on-high-risk-ai-classification">Critical infrastructure &amp; high-risk classification</a> ·
+        <a href="https://www.regulation-ai.eu/en/annex-iii/">Annex III obligations &amp; the Dec 2027 deadline</a> ·
+        <a href="https://www.regulation-ai.eu/en/omnibus/ai-act-omnibus-deadlines/">AI Act Omnibus deadlines</a> ·
+        <a href="https://www.kiteworks.com/regulatory-compliance/eu-ai-act-deadline-compliance/">High-risk deployer readiness</a>
+      </p>
+
+      <h3>Cross-industry</h3>
+      <p>
+        <em>Automotive:</em>
+        <a href="https://visuresolutions.com/automotive/ul-4600/">UL 4600 (Visure)</a> ·
+        <a href="https://www.intertek.com/automotive/ul-4600/">UL 4600 (Intertek)</a> ·
+        <a href="https://www.ul.com/services/artificial-intelligence-ai-and-autonomous-safety-services">UL Solutions AI &amp; autonomy</a> ·
+        <a href="https://edgecaseresearch.medium.com/an-overview-of-draft-ul-4600-standard-for-safety-for-the-evaluation-of-autonomous-products-a50083762591">Overview of draft UL 4600</a> ·
+        <a href="https://www.sciencedirect.com/science/article/pii/S259019822500510X">Unified framework: ISO 26262, SOTIF, UL 4600</a> ·
+        <a href="https://www.sciencedirect.com/science/article/pii/S2095809924000274">SOTIF survey</a>
+      </p>
+      <p>
+        <em>Aviation:</em>
+        <a href="https://www.icao.int/sites/default/files/EURNAT/MeetingDocs/Safety%20workshops/2025%20Safety%20-%20ICAO%20workshop%20on%20use%20of%20artificial%20intelligence%20for%20safety%20data%20processing%20and%20analysis/3-EUROCAE-WG-114-ICAO_AI-Workshop.pdf">EUROCAE WG-114 (ICAO)</a> ·
+        <a href="https://na.eventscloud.com/file_uploads/115fca49330a77ce92d7fe04e9874faf_Day1-Jahn-202508ED-324ARP6983presFAAAI-MLTechExchangeMeeting_8-5-25-Read-Only.pdf">SAE G-34 / ARP6983 briefing</a> ·
+        <a href="https://theaircurrent.com/tac-explains/glossary-ai-ml-terms-aircraft-certification/">Glossary of AI/ML certification terms</a> ·
+        <a href="https://aviationweek.com/aerospace/emerging-technologies/opinion-how-demonstrate-ai-systems-safety">How to demonstrate AI system safety</a> ·
+        <a href="https://www.faa.gov/about/plansreports/aviation-safety-information-analysis-and-sharing-asias">ASIAS (FAA)</a> ·
+        <a href="https://www.asias.faa.gov/">ASIAS portal</a> ·
+        <a href="https://skybrary.aero/articles/aviation-safety-information-analysis-and-sharing-asias">ASIAS (SKYbrary)</a> ·
+        <a href="https://skybrary.aero/articles/safety-information-exchange">Safety Information Exchange</a>
+      </p>
+      <p>
+        <em>Medical:</em>
+        <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence">FDA — PCCP for AI-enabled device software functions</a> ·
+        <a href="https://intuitionlabs.ai/articles/fda-ai-ml-samd-guidance-compliance">FDA AI/ML SaMD compliance guide</a> ·
+        <a href="https://intuitionlabs.ai/articles/fda-pccp-implementation-guide-ai-ml-samd">PCCP implementation guide</a> ·
+        <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12730494/">ML-enabled devices authorized in 2024</a>
+      </p>
+      <p>
+        <em>Financial:</em>
+        <a href="https://domino.ai/blog/what-changes-with-sr-26-2">What changes with SR 26-2</a> ·
+        <a href="https://www.sia-partners.com/en/insights/publications/sr-11-7-vs-sr-26-2-model-risk-management-modernization">SR 11-7 vs SR 26-2</a> ·
+        <a href="https://www.lumenova.ai/blog/sr-26-2-model-risk-management-banking/">SR 26-2 actionable guide</a> ·
+        <a href="https://medium.com/the-investors-handbook/sr-11-7-to-sr-26-2-from-checklist-to-judgment-in-model-risk-management-03b94f1db3dd">From checklist to judgment</a>
+      </p>
+      <p>
+        <em>Nuclear:</em>
+        <a href="https://www.nrc.gov/ai">NRC Artificial Intelligence</a> ·
+        <a href="https://www.nrc.gov/docs/ML2217/ML22175A206.pdf">NRC AI Strategic Plan FY2023–2027</a> ·
+        <a href="https://www.nrc.gov/ai/externally-focused">How the NRC is preparing for AI</a> ·
+        <a href="https://www.nrc.gov/docs/ML2419/ML24194A116.pdf">NRC AI project plan</a> ·
+        <a href="https://www.nrc.gov/sites/default/files/cdn/doc-collection-news/2026/26-014.pdf">NRC AI symposium 2026</a>
+      </p>
+
+      <h3>AI security &amp; guardrails</h3>
+      <p>
+        <a href="https://www.vectra.ai/topics/mitre-atlas">MITRE ATLAS overview</a> ·
+        <a href="https://www.practical-devsecops.com/mitre-atlas-framework-guide-securing-ai-systems/">ATLAS framework guide 2026</a> ·
+        <a href="https://repello.ai/blog/mitre-atlas-framework">ATLAS technique mapping</a> ·
+        <a href="https://www.redfoxsec.com/blog/mitre-atlas-vs-owasp-llm-top-10-which-framework-should-you-use-in-2026">ATLAS vs OWASP LLM Top 10</a> ·
+        <a href="https://github.com/LLMSecurity/awesome-agent-skills-security">Agent skills security resources</a> ·
+        <a href="https://www.paloaltonetworks.com/resources/whitepapers/securing-ai-s-front-lines">Securing AI's front lines</a> ·
+        <a href="https://ideaforgestudios.com/2026/07/17/human-in-the-loop-ai-agents-autonomy-playbook/">Human-in-the-loop autonomy playbook</a> ·
+        <a href="https://tblocks.com/articles/ai-in-utilities-autonomous-grid-operations/">AI-native grid operations</a> ·
+        <a href="https://underdefense.com/blog/ai-soc-guardrails/">AI SOC guardrails 2026</a> ·
+        <a href="https://intellisee.com/intelligence/agentic-ai-safety-case-physical-security-2026-autonomy-tiers-failure-modes-operational-guardrails/">Agentic AI safety case framework</a> ·
+        <a href="https://www.renewableenergyworld.com/power-grid/how-ai-is-reshaping-cybersecurity-in-utility-operations/">AI and cybersecurity in utility operations</a>
+      </p>
+
+      <h3>Naming collision reference</h3>
+      <p>
+        <a href="https://www.safer-ai.org/">SaferAI (safer-ai.org) — unrelated non-profit</a> ·
+        <a href="https://www.safer-ai.org/the-first-ai-risk-management-ratings-expose-industry-wide-shortcomings">Their AI risk management ratings</a>
+      </p>
+
+      <p class="colophon">
+        Compiled 10 August 2026 from public sources. Direct retrieval of epri.com, msites.epri.com,
+        openpowerai.org, globenewswire.com and nist.gov was blocked by network egress policy; EPRI-specific
+        detail derives from search-engine extraction of those pages. Verify clause 09 items directly
+        with EPRI before acting on the schedule.
+      </p>
+    </div>
+  </section>
+
+</div>
