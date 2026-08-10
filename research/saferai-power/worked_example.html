@@ -1,0 +1,899 @@
+<title>Worked Example — One Use Case Through SAFERai.power</title>
+<style>
+  /* ============ TOKENS (matched to the parent brief) ============ */
+  :root {
+    --ground:        #F1F4F3;
+    --surface:       #FFFFFF;
+    --sunken:        #E5EAE8;
+    --ink:           #131E1C;
+    --ink-mid:       #3D4E4A;
+    --ink-soft:      #5F706C;
+    --rule:          #CED8D5;
+    --rule-soft:     #DFE6E4;
+    --accent:        #0E6F63;
+    --accent-deep:   #0A544B;
+    --accent-soft:   #D5E7E3;
+    --amber:         #97590F;
+    --amber-soft:    #F2E4D0;
+    --shadow:        0 1px 2px rgba(19,30,28,.05), 0 8px 24px -16px rgba(19,30,28,.28);
+
+    /* ordinal risk ramp — one hue, monotone lightness, low end 2.16:1 on white */
+    --lvl1: #E3A45F;
+    --lvl2: #C97C2C;
+    --lvl3: #A55516;
+    --lvl4: #78320D;
+    --lvl-track: #E5EAE8;
+    /* per-step foregrounds — each computed >=4.5:1 on its own step */
+    --on1: #131E1C; --on2: #131E1C; --on3: #FFFFFF; --on4: #FFFFFF;
+
+    --sans: ui-sans-serif, "Helvetica Neue", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Hoefler Text", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D1312;
+      --surface:     #151D1C;
+      --sunken:      #0A100F;
+      --ink:         #E3EAE8;
+      --ink-mid:     #B0BFBB;
+      --ink-soft:    #8B9C97;
+      --rule:        #2A3634;
+      --rule-soft:   #1E2827;
+      --accent:      #4FC8B4;
+      --accent-deep: #7FDCCB;
+      --accent-soft: #10322D;
+      --amber:       #D9A05B;
+      --amber-soft:  #2E2216;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+      /* ramp flips anchor in dark — low end 2.50:1 on the dark surface */
+      --lvl1: #7A5227;
+      --lvl2: #A87434;
+      --lvl3: #D29A4F;
+      --lvl4: #F0BC80;
+      --lvl-track: #232E2C;
+      --on1: #E3EAE8; --on2: #0D1312; --on3: #0D1312; --on4: #0D1312;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0D1312;
+    --surface:     #151D1C;
+    --sunken:      #0A100F;
+    --ink:         #E3EAE8;
+    --ink-mid:     #B0BFBB;
+    --ink-soft:    #8B9C97;
+    --rule:        #2A3634;
+    --rule-soft:   #1E2827;
+    --accent:      #4FC8B4;
+    --accent-deep: #7FDCCB;
+    --accent-soft: #10322D;
+    --amber:       #D9A05B;
+    --amber-soft:  #2E2216;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    --lvl1: #7A5227;
+    --lvl2: #A87434;
+    --lvl3: #D29A4F;
+    --lvl4: #F0BC80;
+    --lvl-track: #232E2C;
+    --on1: #E3EAE8; --on2: #0D1312; --on3: #0D1312; --on4: #0D1312;
+  }
+
+  /* ============ BASE ============ */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 74rem; margin-inline: auto; padding: 0 clamp(1.1rem, 4vw, 3.25rem) 6rem; }
+
+  /* ============ MASTHEAD ============ */
+  .masthead { padding: clamp(2.6rem, 6vw, 4.5rem) 0 0; }
+  .eyebrow {
+    font-family: var(--mono); font-size: .69rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 1.3rem;
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  }
+  .eyebrow::after { content: ""; flex: 1 1 3rem; height: 1px; background: var(--rule); min-width: 2rem; }
+  h1 {
+    font-family: var(--sans); font-weight: 760;
+    font-size: clamp(2.1rem, 5.4vw, 3.5rem); line-height: 1.03;
+    letter-spacing: -.033em; text-wrap: balance; margin: 0 0 1.2rem; max-width: 22ch;
+  }
+  .deck {
+    font-size: clamp(1.05rem, 2vw, 1.24rem); line-height: 1.5;
+    color: var(--ink-mid); max-width: 60ch; margin: 0 0 2.2rem;
+  }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 0 2.4rem;
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    padding: 1rem 0; margin-bottom: 3rem;
+  }
+  .meta div { padding: .35rem 0; }
+  .meta dt {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--ink-soft); margin: 0 0 .3rem;
+  }
+  .meta dd { margin: 0; font-family: var(--sans); font-size: .92rem; font-weight: 570; letter-spacing: -.006em; }
+
+  /* ============ PROSE ============ */
+  h2 {
+    font-family: var(--sans); font-weight: 720;
+    font-size: clamp(1.45rem, 3vw, 1.95rem); line-height: 1.12;
+    letter-spacing: -.026em; text-wrap: balance; margin: 0 0 1.1rem; max-width: 26ch;
+  }
+  h3 {
+    font-family: var(--sans); font-weight: 660; font-size: 1.08rem;
+    line-height: 1.28; letter-spacing: -.013em; margin: 2.4rem 0 .8rem; max-width: 48ch;
+  }
+  h4 {
+    font-family: var(--mono); font-weight: 620; font-size: .7rem;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin: 2rem 0 .7rem;
+  }
+  p, ul, ol { max-width: 66ch; }
+  p { margin: 0 0 1.1rem; }
+  ul, ol { margin: 0 0 1.2rem; padding-left: 1.2rem; }
+  li { margin-bottom: .45rem; padding-left: .2rem; }
+  li::marker { color: var(--accent); }
+  strong { font-weight: 640; color: var(--ink); }
+  a { color: var(--accent-deep); text-underline-offset: .16em; }
+  a:hover { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  code { font-family: var(--mono); font-size: .855em; background: var(--sunken); padding: .1em .38em; border-radius: 2px; color: var(--ink-mid); }
+
+  .note {
+    border-left: 2px solid var(--accent); background: var(--accent-soft);
+    padding: 1.1rem 1.3rem; margin: 1.7rem 0; max-width: 64ch;
+  }
+  .note > :last-child { margin-bottom: 0; }
+  .note p { font-size: .95rem; }
+  .note.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+
+  /* ============ PIPELINE OVERVIEW ============ */
+  .pipeline {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft);
+    margin: 0 0 3.5rem;
+  }
+  .pl {
+    background: var(--surface); padding: .95rem 1rem 1.05rem;
+    display: flex; flex-direction: column; gap: .3rem;
+  }
+  .pl-n { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; color: var(--accent); }
+  .pl-t { font-family: var(--sans); font-size: .85rem; font-weight: 620; letter-spacing: -.012em; line-height: 1.25; }
+  .pl-a {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-soft);
+    display: flex; align-items: center; gap: .38rem; margin-top: .1rem;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; border: 1.5px solid var(--accent); }
+  .dot.solid { background: var(--accent); }
+
+  /* ============ STAGES ============ */
+  .stage {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: .6rem;
+    padding: 0 0 2.6rem;
+  }
+  @media (min-width: 54rem) {
+    .stage { grid-template-columns: 3.6rem minmax(0, 1fr); column-gap: 2rem; }
+    .stage-rail { position: relative; }
+    .stage-rail::after {
+      content: ""; position: absolute; left: 1.15rem; top: 2.6rem; bottom: -2.6rem;
+      width: 1px; background: var(--rule);
+    }
+    .stage:last-of-type .stage-rail::after { display: none; }
+  }
+  .node {
+    width: 2.3rem; height: 2.3rem; border-radius: 50%;
+    border: 1px solid var(--accent); color: var(--accent); background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: .78rem; font-weight: 620;
+    position: relative; z-index: 1;
+  }
+  .stage-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.1rem;
+    border-bottom: 1px solid var(--rule); padding-bottom: .7rem; margin-bottom: 1.1rem;
+  }
+  .stage-head h3 { margin: 0; font-size: 1.22rem; font-weight: 700; letter-spacing: -.02em; }
+  .stage-meta {
+    font-family: var(--mono); font-size: .655rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-soft);
+    display: flex; gap: .9rem; flex-wrap: wrap;
+  }
+
+  /* ============ DOCUMENT CARD ============ */
+  .doc {
+    border: 1px solid var(--rule); background: var(--surface);
+    box-shadow: var(--shadow); margin: 1.5rem 0 1.8rem; overflow: hidden;
+  }
+  .doc-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem;
+    padding: .8rem 1.1rem; background: var(--sunken); border-bottom: 1px solid var(--rule);
+  }
+  .doc-id { font-family: var(--mono); font-size: .72rem; letter-spacing: .05em; color: var(--ink-mid); }
+  .doc-title {
+    font-family: var(--sans); font-size: .92rem; font-weight: 660;
+    letter-spacing: -.012em; margin-right: auto;
+  }
+  .fields { display: grid; grid-template-columns: minmax(0,1fr); }
+  .f {
+    display: grid; grid-template-columns: minmax(0,1fr);
+    gap: .2rem .9rem; padding: .78rem 1.1rem; border-bottom: 1px solid var(--rule-soft);
+  }
+  @media (min-width: 44rem) { .f { grid-template-columns: 11.5rem minmax(0,1fr) 5.4rem; align-items: start; } }
+  .f:last-child { border-bottom: 0; }
+  .f-k {
+    font-family: var(--mono); font-size: .655rem; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-soft); padding-top: .18rem;
+  }
+  .f-v { font-family: var(--sans); font-size: .87rem; line-height: 1.5; color: var(--ink); }
+  .f-v em { color: var(--ink-mid); }
+  .f.gap { background: var(--amber-soft); }
+  .f.gap .f-v { color: var(--ink-mid); }
+
+  .pill {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .09em;
+    text-transform: uppercase; padding: .2rem .45rem; border: 1px solid currentColor;
+    border-radius: 2px; white-space: nowrap; display: inline-block; font-weight: 620;
+  }
+  .pill.ok { color: var(--accent); }
+  .pill.gap { color: var(--amber); }
+  .pill.new { color: var(--accent-deep); background: var(--accent-soft); }
+
+  /* ============ TIER CHIP ============ */
+  .tier {
+    font-family: var(--mono); font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    padding: .25rem .55rem; border-radius: 2px; white-space: nowrap;
+  }
+  .tier.t1 { background: var(--lvl1); color: var(--on1); }
+  .tier.t2 { background: var(--lvl2); color: var(--on2); }
+  .tier.t3 { background: var(--lvl3); color: var(--on3); }
+  .tier.t4 { background: var(--lvl4); color: var(--on4); }
+
+  /* ============ ORDINAL METER (scorecard) ============ */
+  .score { border: 1px solid var(--rule); background: var(--surface); margin: 1.5rem 0 1.8rem; }
+  .score-row {
+    display: grid; grid-template-columns: minmax(0,1fr);
+    gap: .35rem .9rem; padding: .85rem 1.1rem; border-bottom: 1px solid var(--rule-soft);
+  }
+  @media (min-width: 46rem) {
+    .score-row { grid-template-columns: 9.5rem 8.5rem 7rem minmax(0,1fr); align-items: center; }
+  }
+  .score-row:last-child { border-bottom: 0; }
+  .score-k {
+    font-family: var(--mono); font-size: .655rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .meter { display: flex; gap: 2px; height: 9px; }
+  .meter i {
+    flex: 1; background: var(--lvl-track); border-radius: 1px;
+  }
+  .meter i:first-child { border-radius: 3px 1px 1px 3px; }
+  .meter i:last-child  { border-radius: 1px 3px 3px 1px; }
+  .meter[data-level="1"] i:nth-child(-n+1),
+  .meter[data-level="2"] i:nth-child(-n+2),
+  .meter[data-level="3"] i:nth-child(-n+3),
+  .meter[data-level="4"] i:nth-child(-n+4) { background: var(--lvl1); }
+  .meter[data-level="2"] i:nth-child(-n+2) { background: var(--lvl2); }
+  .meter[data-level="3"] i:nth-child(-n+3) { background: var(--lvl3); }
+  .meter[data-level="4"] i:nth-child(-n+4) { background: var(--lvl4); }
+  .score-v {
+    font-family: var(--sans); font-size: .82rem; font-weight: 620;
+    color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.008em;
+  }
+  .score-n { font-family: var(--sans); font-size: .82rem; color: var(--ink-mid); line-height: 1.45; }
+
+  /* ============ ENVELOPE BLOCKS ============ */
+  .env {
+    border: 1px solid var(--rule); background: var(--surface);
+    margin: 1.4rem 0 1.7rem; overflow-x: auto;
+  }
+  .env-h {
+    font-family: var(--mono); font-size: .655rem; letter-spacing: .12em;
+    text-transform: uppercase; padding: .65rem 1.1rem;
+    background: var(--sunken); border-bottom: 1px solid var(--rule); color: var(--ink-mid);
+  }
+  .env-h.in  { color: var(--accent); }
+  .env-h.out { color: var(--amber); }
+  .env ul { margin: 0; padding: .85rem 1.1rem .95rem 2.3rem; max-width: none; }
+  .env li { font-family: var(--sans); font-size: .845rem; line-height: 1.5; margin-bottom: .35rem; }
+  .env li:last-child { margin-bottom: 0; }
+  .env li::marker { color: var(--ink-soft); }
+
+  /* ============ FINDINGS ============ */
+  .findings { display: grid; gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft); margin: 1.5rem 0 1.8rem; }
+  .finding { background: var(--surface); padding: 1.05rem 1.2rem 1.15rem; }
+  .finding-h {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem .7rem; margin-bottom: .4rem;
+  }
+  .sev {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 620; padding: .16rem .42rem; border-radius: 2px; white-space: nowrap;
+  }
+  .sev.sub { background: var(--lvl4); color: var(--on4); }
+  .sev.shallow { background: var(--sunken); color: var(--ink-soft); }
+  .finding h5 { font-family: var(--sans); font-weight: 660; font-size: .95rem; letter-spacing: -.012em; margin: 0; }
+  .finding p { font-size: .865rem; line-height: 1.5; color: var(--ink-mid); margin: 0; max-width: none; }
+
+  /* ============ POSITION SPLIT ============ */
+  .split {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft); margin: 1.5rem 0 1.8rem;
+  }
+  .pos { background: var(--surface); padding: 1.15rem 1.25rem 1.3rem; }
+  .pos-h { display: flex; align-items: center; gap: .55rem; margin-bottom: .6rem; flex-wrap: wrap; }
+  .pos-who { font-family: var(--mono); font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  .pos p { font-size: .875rem; line-height: 1.52; margin: 0; max-width: none; color: var(--ink-mid); }
+  .pos p.quote { color: var(--ink); font-style: italic; margin-bottom: .55rem; }
+
+  /* ============ READOUT ============ */
+  .readout {
+    background: var(--surface); border: 1px solid var(--rule); box-shadow: var(--shadow);
+    padding: 1.5rem 1.7rem; margin: 2rem 0; max-width: 44rem;
+  }
+  .readout-calc {
+    font-family: var(--mono); font-size: clamp(.75rem, 1.6vw, .9rem); color: var(--ink-mid);
+    font-variant-numeric: tabular-nums; margin: 0 0 1.05rem; padding-bottom: 1.05rem;
+    border-bottom: 1px dashed var(--rule); max-width: none;
+  }
+  .readout-fig {
+    font-family: var(--sans); font-weight: 740; font-size: clamp(1.9rem, 5vw, 2.8rem);
+    line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+    color: var(--accent); margin: 0 0 .5rem;
+  }
+  .readout-cap { font-family: var(--sans); font-size: .93rem; line-height: 1.42; color: var(--ink-mid); margin: 0; max-width: 48ch; }
+
+  .thesis {
+    font-family: var(--sans); font-weight: 640; font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+    line-height: 1.28; letter-spacing: -.02em; color: var(--ink);
+    border-top: 2px solid var(--accent); border-bottom: 1px solid var(--rule);
+    padding: 1.4rem 0; margin: 2rem 0; max-width: 36ch; text-wrap: balance;
+  }
+
+  .scroller { overflow-x: auto; margin: 1.5rem 0 1.9rem; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 32rem; font-family: var(--sans); font-size: .865rem; line-height: 1.46; }
+  thead th {
+    font-family: var(--mono); font-weight: 620; font-size: .645rem; letter-spacing: .13em;
+    text-transform: uppercase; text-align: left; color: var(--ink-soft); background: var(--sunken);
+    padding: .75rem 1rem; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  tbody td, tbody th {
+    padding: .78rem 1rem; border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top; text-align: left; font-weight: 400;
+  }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+  tbody th { font-weight: 620; color: var(--ink); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .colophon {
+    margin-top: 3.5rem; padding-top: 1.4rem; border-top: 1px solid var(--rule);
+    font-family: var(--mono); font-size: .69rem; letter-spacing: .04em;
+    color: var(--ink-soft); line-height: 1.7; max-width: 70ch;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">SAFERai.power &middot; Worked Example</p>
+    <h1>One use case, end to end</h1>
+    <p class="deck">
+      A vegetation-management AI system goes through intake, agent pre-fill, tiering, gap-closing,
+      red team and ratification — showing the artifacts produced at each step, and the finding that
+      changed the framework for everyone else.
+    </p>
+    <dl class="meta">
+      <div><dt>System</dt><dd>VMS-1 · Vegetation encroachment detection</dd></div>
+      <div><dt>Initial tier</dt><dd>Tier 3 (member) → disputed</dd></div>
+      <div><dt>Member time</dt><dd>3 hrs 30 min</dd></div>
+      <div><dt>Elapsed</dt><dd>5 working days</dd></div>
+      <div><dt>Outcome</dt><dd>Operating restriction + rubric change</dd></div>
+    </dl>
+  </header>
+
+  <div class="note warn">
+    <p>
+      <strong>Illustrative composite.</strong> VMS-1 is a hypothetical system at a hypothetical
+      member utility, built from patterns common to vegetation-management AI programs. It is not a
+      description of any real utility's system, vendor, or performance. The point is the shape of the
+      process and the form of the outputs.
+    </p>
+  </div>
+
+  <h2>The system</h2>
+  <p>
+    A Western investor-owned utility, ~1.2M customers, wildfire-prone service territory. Each year it
+    flies <strong>12,400 circuit miles</strong> of distribution line with aerial LiDAR and oblique
+    imagery. A third-party computer-vision model estimates conductor-to-vegetation clearance, classifies
+    span risk, and <strong>writes prioritized work orders directly into the work management system</strong>.
+    A vegetation planner reviews the resulting queue; field crews execute the trims.
+    Roughly <strong>180,000 spans</strong> are assessed per year.
+  </p>
+  <p>
+    It is a good example precisely because the tier is <em>not</em> obvious. The model never operates
+    equipment — a human crew does the cutting. But a span it fails to flag is a span nobody looks at.
+  </p>
+
+  <div class="pipeline">
+    <div class="pl"><span class="pl-n">00</span><span class="pl-t">Intake</span><span class="pl-a"><span class="dot"></span>Member · 10 min</span></div>
+    <div class="pl"><span class="pl-n">01</span><span class="pl-t">Agent pre-fill</span><span class="pl-a"><span class="dot solid"></span>Agent · 2 hrs</span></div>
+    <div class="pl"><span class="pl-n">02</span><span class="pl-t">Human tiering</span><span class="pl-a"><span class="dot"></span>Member · 40 min</span></div>
+    <div class="pl"><span class="pl-n">03</span><span class="pl-t">Copilot 2nd opinion</span><span class="pl-a"><span class="dot solid"></span>Agent · 4 min</span></div>
+    <div class="pl"><span class="pl-n">04</span><span class="pl-t">Close the gaps</span><span class="pl-a"><span class="dot"></span>Member · 75 min</span></div>
+    <div class="pl"><span class="pl-n">05</span><span class="pl-t">Agent red team</span><span class="pl-a"><span class="dot solid"></span>Agent · 20 min</span></div>
+    <div class="pl"><span class="pl-n">06</span><span class="pl-t">Cross-member review</span><span class="pl-a"><span class="dot"></span>Peer · 60 min</span></div>
+    <div class="pl"><span class="pl-n">07</span><span class="pl-t">Ratify &amp; publish</span><span class="pl-a"><span class="dot"></span>Pod · 15 min</span></div>
+  </div>
+
+  <!-- ========== STAGE 0 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">00</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Intake</h3>
+        <div class="stage-meta"><span>Member</span><span>Day 1</span><span>10 minutes</span></div>
+      </div>
+      <p>
+        The member nominates one of its two required use cases. Intake is deliberately trivial —
+        three sentences and pointers to documents that already exist. Anything heavier and members
+        nominate their easiest system instead of their most interesting one.
+      </p>
+      <div class="doc">
+        <div class="doc-bar">
+          <span class="doc-id">INTAKE-2026-0143</span>
+          <span class="doc-title">VMS-1 nomination</span>
+        </div>
+        <div class="fields">
+          <div class="f"><span class="f-k">What it does</span><span class="f-v">Detects vegetation encroachment on distribution conductors from annual aerial LiDAR + imagery; generates and prioritizes trim work orders in the WMS.</span><span></span></div>
+          <div class="f"><span class="f-k">Who acts on it</span><span class="f-v">VM planner reviews the queue; contract crews execute trims.</span><span></span></div>
+          <div class="f"><span class="f-k">Why nominated</span><span class="f-v">In production 3 years; nobody has ever assessed it as an AI system.</span><span></span></div>
+          <div class="f"><span class="f-k">Documents available</span><span class="f-v"><em>Vendor model card · MSA + SOW · security questionnaire · WMS integration spec · ops procedure VM-114 · 18 months of WMS records</em></span><span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 1 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">01</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Agent pre-fill</h3>
+        <div class="stage-meta"><span>Risk File Drafter</span><span>Day 1–2</span><span>~2 hrs unattended</span></div>
+      </div>
+      <p>
+        The Drafter ingests the six document sources and populates what it can. Its binding guardrail
+        does the real work here: <strong>no field is populated without a source, and a gap is marked
+        as a gap rather than inferred.</strong> The output that matters is not the seven filled fields
+        — it is the four it refuses to fill.
+      </p>
+
+      <div class="doc">
+        <div class="doc-bar">
+          <span class="doc-id">RF-2026-0143 · v0.1 · agent-drafted</span>
+          <span class="doc-title">AI System Risk File — VMS-1</span>
+          <span class="pill ok">7 populated</span>
+          <span class="pill gap">4 gaps</span>
+        </div>
+        <div class="fields">
+          <div class="f">
+            <span class="f-k">Purpose &amp; intended use</span>
+            <span class="f-v">Identify spans where vegetation clearance is below standard; prioritize trim scheduling across 12,400 circuit miles. <em>Source: SOW §2.1</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Capabilities &amp; limits</span>
+            <span class="f-v">Vendor reports aggregate precision 0.91 / recall 0.94 on internal validation set. <em>Source: model card v3.2</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Data provenance</span>
+            <span class="f-v">Trained on vendor's multi-client LiDAR corpus, 2019–2024. This utility's territory not represented in training data. <em>Source: model card §4</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Human oversight</span>
+            <span class="f-v">Planner reviews generated work-order queue before crew dispatch. <em>Source: ops procedure VM-114</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Deployment conditions</span>
+            <span class="f-v">Batch scoring post-flight; writes to WMS via API; priority field drives crew sequencing. <em>Source: integration spec</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Incident history</span>
+            <span class="f-v">No AI-attributed incidents logged. <em>Note: WMS has no field to attribute an incident to the model.</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f">
+            <span class="f-k">Guardrails in place</span>
+            <span class="f-v">Planner review gate; work orders below priority threshold queue rather than dispatch. <em>Source: VM-114</em></span>
+            <span><span class="pill ok">Sourced</span></span>
+          </div>
+          <div class="f gap">
+            <span class="f-k">Operating envelope</span>
+            <span class="f-v"><strong>GAP.</strong> No reviewed document defines conditions under which model performance is claimed valid. Vendor reports aggregate metrics only — not stratified by species, terrain slope, canopy density, or acquisition season.</span>
+            <span><span class="pill gap">Gap</span></span>
+          </div>
+          <div class="f gap">
+            <span class="f-k">TEVV performed</span>
+            <span class="f-v"><strong>GAP.</strong> Vendor internal validation only. No independent test on this utility's territory. No stratified recall reported.</span>
+            <span><span class="pill gap">Gap</span></span>
+          </div>
+          <div class="f gap">
+            <span class="f-k">Change envelope</span>
+            <span class="f-v"><strong>GAP.</strong> MSA §7.3 permits vendor model updates on 30 days' notice with no revalidation requirement. Two updates occurred in the last 18 months. No reassessment was performed.</span>
+            <span><span class="pill gap">Gap</span></span>
+          </div>
+          <div class="f gap">
+            <span class="f-k">Monitoring plan</span>
+            <span class="f-v"><strong>GAP.</strong> WMS records work-order completion. No mechanism observes spans the model did <em>not</em> flag. False negatives are structurally unobservable.</span>
+            <span><span class="pill gap">Gap</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        <p>
+          That last gap is the whole reason the exercise is worth doing. The system reports 94% recall
+          and has a clean incident log — and neither number means anything, because
+          <strong>nothing in the pipeline can see a miss.</strong> This is a textbook SOTIF failure:
+          the system works exactly as designed, and its performance is simply insufficient for
+          conditions nobody characterized.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 2 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">02</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Human tiering</h3>
+        <div class="stage-meta"><span>VM planner + risk lead</span><span>Day 3</span><span>40 minutes</span></div>
+      </div>
+      <p>
+        Two people score the four rubric dimensions <strong>before seeing any agent opinion</strong>.
+        That ordering is a hard rule — it is what keeps the calibration data meaningful.
+      </p>
+
+      <div class="score">
+        <div class="score-row">
+          <span class="score-k">Consequence</span>
+          <span class="meter" data-level="4" role="img" aria-label="Level 4 of 4, critical"><i></i><i></i><i></i><i></i></span>
+          <span class="score-v">4 · Critical</span>
+          <span class="score-n">A missed high-risk span contributes to ignition potential in a wildfire-prone territory.</span>
+        </div>
+        <div class="score-row">
+          <span class="score-k">Autonomy</span>
+          <span class="meter" data-level="3" role="img" aria-label="Level 3 of 4, elevated"><i></i><i></i><i></i><i></i></span>
+          <span class="score-v">3 · Elevated</span>
+          <span class="score-n">Writes work orders without human authoring. A planner reviews the queue before dispatch.</span>
+        </div>
+        <div class="score-row">
+          <span class="score-k">Operating context</span>
+          <span class="meter" data-level="3" role="img" aria-label="Level 3 of 4, elevated"><i></i><i></i><i></i><i></i></span>
+          <span class="score-v">3 · Elevated</span>
+          <span class="score-n">IT system, but output drives physical field work in a hazard environment. Errors of omission are not observable until failure.</span>
+        </div>
+        <div class="score-row">
+          <span class="score-k">Exposure</span>
+          <span class="meter" data-level="4" role="img" aria-label="Level 4 of 4, critical"><i></i><i></i><i></i><i></i></span>
+          <span class="score-v">4 · Critical</span>
+          <span class="score-n">180,000 spans per year across the entire service territory.</span>
+        </div>
+      </div>
+
+      <p>
+        The member's composite call: <span class="tier t3">TIER 3</span> — reasoning that a qualified
+        planner reviews every work order before any crew is dispatched, which caps effective autonomy.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 3 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">03</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Tiering Copilot — second opinion</h3>
+        <div class="stage-meta"><span>Agent</span><span>Day 3</span><span>4 minutes</span></div>
+      </div>
+      <p>
+        Now, and only now, the Copilot runs. It agrees on three dimensions and disputes one.
+      </p>
+      <div class="doc">
+        <div class="doc-bar">
+          <span class="doc-id">COPILOT-0143</span>
+          <span class="doc-title">Second opinion</span>
+          <span class="tier t4">PROPOSES TIER 4</span>
+        </div>
+        <div class="fields">
+          <div class="f"><span class="f-k">Agreement</span><span class="f-v">Consequence 4, Operating context 3, Exposure 4 — concur with member scoring.</span><span></span></div>
+          <div class="f"><span class="f-k">Dispute</span><span class="f-v"><strong>Autonomy: proposes 4, not 3.</strong> The oversight claim rests on planner review of every work order. At 180,000 spans per year against a single planner FTE, sustained review throughput is approximately 12 seconds per span across an 8-hour day. The documented control is <em>review</em>; the achievable control at this volume is <em>triage</em>.</span><span></span></div>
+          <div class="f"><span class="f-k">Basis</span><span class="f-v">Span volume from SOW §1.2; staffing from ops procedure VM-114 §3; no throughput assumption stated in either document.</span><span></span></div>
+          <div class="f"><span class="f-k">Status</span><span class="f-v">Advisory. Cannot change the tier. Routed to the member for response.</span><span><span class="pill ok">Advisory</span></span></div>
+        </div>
+      </div>
+      <p>
+        The member declines to change its score, and records why. <strong>The disagreement is
+        preserved rather than resolved</strong> — it travels with the file into cross-member review.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 4 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">04</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Closing the gaps</h3>
+        <div class="stage-meta"><span>VM planner + engineer</span><span>Day 4</span><span>75 minutes</span></div>
+      </div>
+      <p>
+        The four gaps are the member's actual work. Two of them — the Operating Envelope and the
+        Change Envelope — are fields no utility has written before, so this is where the worked
+        example earns its keep.
+      </p>
+
+      <h4>Operating envelope</h4>
+      <p>The conditions under which the model's performance is claimed valid — and what happens outside them.</p>
+      <div class="env">
+        <div class="env-h in">Valid — auto work order permitted</div>
+        <ul>
+          <li>Imagery captured April–October (leaf-on), cloud cover &lt; 20%</li>
+          <li>Terrain slope ≤ 25°</li>
+          <li>Species within the 12-species trained set (enumerated in Annex A)</li>
+          <li>Canopy density ≤ 0.7 LAI proxy</li>
+          <li>Conductor visible in ≥ 2 oblique views</li>
+        </ul>
+        <div class="env-h out">Out of envelope — route to manual patrol, no auto work order</div>
+        <ul>
+          <li>Leaf-off / winter acquisition</li>
+          <li>Terrain slope &gt; 25°</li>
+          <li>Species outside the trained set</li>
+          <li>Post-fire regrowth areas — no training data exists for this condition</li>
+        </ul>
+      </div>
+
+      <div class="note warn">
+        <p>
+          <strong>Writing the envelope produced the finding of the whole exercise.</strong> Comparing
+          the envelope against the actual flight and terrain data, the member discovered that
+          <strong>roughly 17% of assessed spans fall outside the stated envelope</strong> — steep
+          terrain and post-fire regrowth — and had been auto-processed into work orders anyway, for
+          three years, with no flag. Nobody had done anything wrong. The envelope had simply never
+          been written down, so there was nothing to be outside of.
+        </p>
+      </div>
+
+      <h4>Change envelope</h4>
+      <p>Borrowed directly from the FDA's PCCP pattern: pre-authorize the envelope of change, so routine vendor updates do not each trigger a fresh review.</p>
+      <div class="env">
+        <div class="env-h in">May change with no reassessment</div>
+        <ul>
+          <li>Retraining on additional imagery from within the defined envelope, provided stratified recall on the held-out set drops no more than 2 percentage points on any stratum</li>
+          <li>Detection threshold tuning within [0.62, 0.78]</li>
+        </ul>
+        <div class="env-h">Requires pod review — 30 days</div>
+        <ul>
+          <li>New species added to the trained set</li>
+          <li>Change to work-order priority logic</li>
+          <li>Model architecture change</li>
+        </ul>
+        <div class="env-h out">Requires full reassessment</div>
+        <ul>
+          <li>Any envelope extension — new terrain class or acquisition season</li>
+          <li>Any increase in autonomy, e.g. auto-dispatch without planner review</li>
+          <li>Vendor foundation or backbone model swap</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 5 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">05</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Agent red team</h3>
+        <div class="stage-meta"><span>Red-Team agent</span><span>Day 5</span><span>20 min unattended</span></div>
+      </div>
+      <p>
+        Six findings — three substantive, three shallow. The shallow ones are exactly what the agent
+        should be absorbing so that human reviewers never spend a minute on them.
+      </p>
+      <div class="findings">
+        <div class="finding">
+          <div class="finding-h"><span class="sev sub">Substantive</span><h5>The headline metric is unverifiable in production</h5></div>
+          <p>Recall of 0.94 is asserted from vendor internal validation. With no false-negative observation mechanism, the deployed system cannot confirm or refute it. The file's central performance claim has no evidence path.</p>
+        </div>
+        <div class="finding">
+          <div class="finding-h"><span class="sev sub">Substantive</span><h5>Deployment exceeds the declared envelope</h5></div>
+          <p>~17% of assessed spans fall outside the stated operating envelope and are auto-processed regardless. Either the envelope or the deployment is wrong; both cannot stand.</p>
+        </div>
+        <div class="finding">
+          <div class="finding-h"><span class="sev sub">Substantive</span><h5>Performance claim predates two model changes</h5></div>
+          <p>Vendor shipped two updates in 18 months under MSA §7.3. The recall figure in the file was measured before both. No revalidation evidence exists for the currently deployed weights.</p>
+        </div>
+        <div class="finding">
+          <div class="finding-h"><span class="sev shallow">Shallow</span><h5>Oversight procedure predates the system</h5></div>
+          <p>VM-114 was written in 2019 for manual patrol workflows and has not been revised for AI-generated work orders.</p>
+        </div>
+        <div class="finding">
+          <div class="finding-h"><span class="sev shallow">Shallow</span><h5>No named accountable owner</h5></div>
+          <p>The file lists a vendor contact and a department. No individual is accountable for the system's continued fitness.</p>
+        </div>
+        <div class="finding">
+          <div class="finding-h"><span class="sev shallow">Shallow</span><h5>The review guardrail has no rejection criteria</h5></div>
+          <p>"Planner reviews the queue" defines no basis on which a planner would reject a generated work order, and no record is kept when one is rejected.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 6 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">06</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Cross-member red team</h3>
+        <div class="stage-meta"><span>Two peer utilities</span><span>Week 12</span><span>60 min each</span></div>
+      </div>
+      <p>
+        Two other members are assigned the file and asked the single question the whole program turns
+        on: <strong>would you deploy this in your territory on this evidence?</strong>
+      </p>
+
+      <div class="split">
+        <div class="pos">
+          <div class="pos-h"><span class="tier t3">TIER 3</span><span class="pos-who">Nominating member</span></div>
+          <p class="quote">"A qualified planner reviews every work order before any crew is dispatched."</p>
+          <p>Holds that a human decision gate sits between model output and physical action, which is what the autonomy dimension is meant to capture.</p>
+        </div>
+        <div class="pos">
+          <div class="pos-h"><span class="tier t4">TIER 4</span><span class="pos-who">Reviewing member B</span></div>
+          <p class="quote">"At 180,000 spans a year that is twelve seconds per span. That is not review, it is a queue."</p>
+          <p>Holds that oversight which cannot be exercised at the required throughput is not a control. Effective autonomy exceeds nominal autonomy.</p>
+        </div>
+        <div class="pos">
+          <div class="pos-h"><span class="tier t3">TIER 3</span><span class="pos-who">Reviewing member C</span></div>
+          <p class="quote">"Tier 3, but only with stratified monitoring as a condition of the tier."</p>
+          <p>Accepts the lower tier only if the unobservable-failure gap is closed — making the tier contingent on a control rather than on the architecture.</p>
+        </div>
+      </div>
+
+      <p class="thesis">The disagreement is the deliverable.</p>
+      <p>
+        Three utilities, three defensible readings of the same rubric against the same evidence. Under
+        the old model this would be smoothed into consensus language in a working session. Here it is
+        the most valuable output of the file, because it exposes a real hole: <strong>the rubric never
+        distinguished documented oversight from achievable oversight.</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== STAGE 7 ========== -->
+  <section class="stage">
+    <div class="stage-rail"><div class="node">07</div></div>
+    <div>
+      <div class="stage-head">
+        <h3>Ratify and publish</h3>
+        <div class="stage-meta"><span>Pod A + Pod B</span><span>Week 13</span><span>15 min member time</span></div>
+      </div>
+      <p>Four things leave this file, and only the first belongs to the nominating member.</p>
+
+      <h4>1 · The member's own decision</h4>
+      <div class="doc">
+        <div class="doc-bar"><span class="doc-id">DECISION-0143</span><span class="doc-title">Operating restriction, effective immediately</span></div>
+        <div class="fields">
+          <div class="f"><span class="f-k">Continue?</span><span class="f-v">Yes — with conditions. The system stays in production.</span><span></span></div>
+          <div class="f"><span class="f-k">Restriction</span><span class="f-v">Auto work-order generation limited to in-envelope spans. The ~17% out-of-envelope population routes to manual patrol.</span><span></span></div>
+          <div class="f"><span class="f-k">New control</span><span class="f-v">Stratified false-negative sampling: 400 randomly selected unflagged spans per quarter receive ground verification.</span><span></span></div>
+          <div class="f"><span class="f-k">Vendor action</span><span class="f-v">Evidence request issued, 60-day response window.</span><span></span></div>
+          <div class="f"><span class="f-k">Reassessment</span><span class="f-v">On first sampling result, or on any vendor model update, whichever comes first.</span><span></span></div>
+        </div>
+      </div>
+
+      <h4>2 · The vendor evidence request</h4>
+      <p>Five specific asks — the same five any of the 25 members would now send, which is the point.</p>
+      <ul>
+        <li>Recall stratified by species, terrain slope band, canopy density and acquisition season</li>
+        <li>Independent validation on a held-out sample from <em>this</em> territory</li>
+        <li>Change log for all model updates since deployment, with revalidation evidence per update</li>
+        <li>A declared operating envelope for the product, in the vendor's own words</li>
+        <li>A supported false-negative sampling protocol</li>
+      </ul>
+
+      <h4>3 · The registry entry</h4>
+      <div class="doc">
+        <div class="doc-bar"><span class="doc-id">REGISTRY · AI-0143</span><span class="doc-title">VMS-1</span><span class="tier t3">TIER 3</span><span class="pill gap">Conditional</span></div>
+        <div class="fields">
+          <div class="f"><span class="f-k">Tier</span><span class="f-v">3 — <strong>conditional</strong> on stratified monitoring. Dissenting position (Tier 4) recorded and linked.</span><span></span></div>
+          <div class="f"><span class="f-k">Autonomy</span><span class="f-v">Human-on-the-loop, throughput-constrained</span><span></span></div>
+          <div class="f"><span class="f-k">Envelope status</span><span class="f-v">Declared · deployment now restricted to in-envelope spans</span><span></span></div>
+          <div class="f"><span class="f-k">Evidence completeness</span><span class="f-v">7 of 11 fields fully evidenced; 4 pending vendor response</span><span></span></div>
+          <div class="f"><span class="f-k">Provenance</span><span class="f-v">Agent-drafted, member-ratified — tagged for the calibration analysis</span><span><span class="pill ok">Tagged</span></span></div>
+          <div class="f"><span class="f-k">Next trigger</span><span class="f-v">Q1 sampling result, or vendor model update</span><span></span></div>
+        </div>
+      </div>
+
+      <h4>4 · What the sector got</h4>
+      <p>Two framework changes, sourced from one file, that now apply to all 25 members.</p>
+      <div class="scroller">
+        <table>
+          <thead><tr><th scope="col">Change</th><th scope="col">Owner</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr>
+              <th scope="row">New rubric sub-criterion: <em>effective vs. nominal oversight</em></th>
+              <td>Pod A</td>
+              <td>Autonomy scoring now asks whether reviewer throughput can support the claimed depth of review. An oversight control that cannot be exercised at operating volume does not reduce the autonomy score.</td>
+            </tr>
+            <tr>
+              <th scope="row">New required risk-file field: <em>observability of failure</em></th>
+              <td>Pod B</td>
+              <td>Every file must state how the system's errors become visible. "They don't" is an acceptable answer — and an automatic escalation.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p>
+          Neither change was anybody's idea in a working session. Both fell out of one member trying to
+          fill in a template about a system they had run for three years without incident.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== COST ========== -->
+  <h2>What it cost</h2>
+  <div class="readout">
+    <p class="readout-calc">Member time: 10 + 40 + 75 + 20 + 60 + 15 min &nbsp;=&nbsp; 3 hrs 30 min &nbsp;·&nbsp; agent time: ~2.5 hrs unattended</p>
+    <p class="readout-fig">3 hrs 30</p>
+    <p class="readout-cap">
+      Against roughly 14 hours for the same file drafted from a blank template. At 2 files per member,
+      the difference is what funds the tripled judgment reserve in clause 07 of the brief.
+    </p>
+  </div>
+  <div class="scroller">
+    <table>
+      <thead><tr><th scope="col">Stage</th><th scope="col">Actor</th><th scope="col" class="num">Member min</th><th scope="col">What the time bought</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">00 Intake</th><td>Member</td><td class="num">10</td><td>Nomination and document pointers</td></tr>
+        <tr><th scope="row">01 Pre-fill</th><td>Agent</td><td class="num">0</td><td>7 fields sourced, 4 gaps identified</td></tr>
+        <tr><th scope="row">02 Tiering</th><td>Member</td><td class="num">40</td><td>Independent scores on 4 dimensions</td></tr>
+        <tr><th scope="row">03 Second opinion</th><td>Agent</td><td class="num">0</td><td>The autonomy dispute</td></tr>
+        <tr><th scope="row">04 Close gaps</th><td>Member</td><td class="num">75</td><td>Operating envelope, change envelope — and the 17% discovery</td></tr>
+        <tr><th scope="row">05 Agent red team</th><td>Agent</td><td class="num">20</td><td>3 substantive findings; 3 shallow ones absorbed</td></tr>
+        <tr><th scope="row">06 Cross-member</th><td>Peers</td><td class="num">60</td><td>The tier disagreement</td></tr>
+        <tr><th scope="row">07 Ratify</th><td>Pod</td><td class="num">15</td><td>Registry entry + 2 framework changes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>What to take from this</h2>
+  <ul>
+    <li><strong>The gaps are the product, not the filled fields.</strong> Seven sourced fields told the member nothing they did not know. The four gaps produced an operating restriction and two framework changes.</li>
+    <li><strong>Writing the envelope is where discovery happens.</strong> The 17% finding did not come from testing the model. It came from being forced to state, in writing, the conditions under which it was claimed to work.</li>
+    <li><strong>Agents made this affordable; they did not make the decisions.</strong> Every judgment — the tier, the envelope bounds, the restriction, the dissent — was human. The agent's contribution was refusing to invent four fields and doing the reading.</li>
+    <li><strong>A clean incident log is not evidence of safety</strong> when nothing in the system can observe the failure mode you care about.</li>
+    <li><strong>One file, three years of quiet operation, and the tier was still genuinely contested</strong> at the end. That is a healthy result, not a failed one — and it is why the corpus needs to be 150 files rather than 50.</li>
+  </ul>
+
+  <p class="colophon">
+    Companion to the SAFERai.power research brief and working strategy. VMS-1 is an illustrative
+    composite, not a real system; figures are constructed for the walkthrough. Process stages, artifact
+    structure and field definitions follow the MVP as defined in clause 06 of the brief and the agent
+    fleet in clause 07.
+  </p>
+
+</div>
