@@ -1,0 +1,2603 @@
+<title>SAFERai.power — Strategy Deck</title>
+
+<style>
+  /* ══════════ TOKENS — inherited verbatim from the brief and worked example ══════════ */
+  :root {
+    --ground:        #F1F4F3;
+    --surface:       #FFFFFF;
+    --sunken:        #E5EAE8;
+    --ink:           #131E1C;
+    --ink-mid:       #3D4E4A;
+    --ink-soft:      #5F706C;
+    --rule:          #CED8D5;
+    --rule-soft:     #DFE6E4;
+    --accent:        #0E6F63;
+    --accent-deep:   #0A544B;
+    --accent-soft:   #D5E7E3;
+    --amber:         #97590F;
+    --amber-soft:    #F2E4D0;
+    /* amber reads 4.47:1 on amber-soft — below AA for small text, so text on the soft
+       ground uses this darker step (5.84:1) while marks keep the lighter --amber */
+    --amber-strong:  #7E4A0C;
+    --shadow:        0 1px 2px rgba(19,30,28,.05), 0 10px 34px -20px rgba(19,30,28,.42);
+
+    /* ordinal risk ramp — one hue, monotone lightness */
+    --lvl1: #E3A45F;
+    --lvl2: #C97C2C;
+    --lvl3: #A55516;
+    --lvl4: #78320D;
+    --lvl-track: #E5EAE8;
+    --on1: #131E1C; --on2: #131E1C; --on3: #FFFFFF; --on4: #FFFFFF;
+
+    --sans: ui-sans-serif, "Helvetica Neue", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Hoefler Text", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D1312;
+      --surface:     #151D1C;
+      --sunken:      #0A100F;
+      --ink:         #E3EAE8;
+      --ink-mid:     #B0BFBB;
+      --ink-soft:    #8B9C97;
+      --rule:        #2A3634;
+      --rule-soft:   #1E2827;
+      --accent:      #4FC8B4;
+      --accent-deep: #7FDCCB;
+      --accent-soft: #10322D;
+      --amber:       #D9A05B;
+      --amber-soft:  #2E2216;
+      --amber-strong:#D9A05B;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 34px -20px rgba(0,0,0,.85);
+      --lvl1: #7A5227;
+      --lvl2: #A87434;
+      --lvl3: #D29A4F;
+      --lvl4: #F0BC80;
+      --lvl-track: #232E2C;
+      --on1: #E3EAE8; --on2: #0D1312; --on3: #0D1312; --on4: #0D1312;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0D1312;
+    --surface:     #151D1C;
+    --sunken:      #0A100F;
+    --ink:         #E3EAE8;
+    --ink-mid:     #B0BFBB;
+    --ink-soft:    #8B9C97;
+    --rule:        #2A3634;
+    --rule-soft:   #1E2827;
+    --accent:      #4FC8B4;
+    --accent-deep: #7FDCCB;
+    --accent-soft: #10322D;
+    --amber:       #D9A05B;
+    --amber-soft:  #2E2216;
+    --amber-strong:#D9A05B;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 10px 34px -20px rgba(0,0,0,.85);
+    --lvl1: #7A5227;
+    --lvl2: #A87434;
+    --lvl3: #D29A4F;
+    --lvl4: #F0BC80;
+    --lvl-track: #232E2C;
+    --on1: #E3EAE8; --on2: #0D1312; --on3: #0D1312; --on4: #0D1312;
+  }
+
+  /* ══════════ BASE ══════════ */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* ══════════ CHROME ══════════ */
+  .topbar {
+    display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
+    padding: .7rem clamp(.8rem, 3vw, 1.9rem);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono); font-size: .66rem;
+    letter-spacing: .15em; text-transform: uppercase; color: var(--ink-soft);
+    background: var(--ground);
+  }
+  .topbar .brand { color: var(--accent); font-weight: 600; }
+  .topbar .sep { flex: 1 1 1rem; height: 1px; background: var(--rule); min-width: .8rem; }
+  .btn {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--ink-mid); background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 2px;
+    padding: .38rem .68rem; cursor: pointer; line-height: 1;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn[disabled] { opacity: .38; cursor: default; }
+  .btn[disabled]:hover { border-color: var(--rule); color: var(--ink-mid); }
+
+  .stagewrap { flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+               padding: clamp(.6rem, 2vw, 1.5rem); }
+  .stage {
+    container-type: inline-size;
+    width: 100%; max-width: 1220px;
+    position: relative;
+  }
+
+  /* ══════════ SLIDE FRAME ══════════ */
+  .slide {
+    display: none;
+    aspect-ratio: 16 / 9;
+    overflow: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
+    padding: 3.5cqw 4.4cqw 3.2cqw;
+    flex-direction: column;
+  }
+  .slide.on { display: flex; }
+  /* Dense modifier: a tighter scale for the handful of slides whose content genuinely needs
+     the room. Wrapped in min-width so it never outranks the narrow-viewport block below. */
+  @media (min-width: 861px) {
+    .slide.dense { padding: 2.7cqw 3.5cqw 2.5cqw; }
+    .slide.dense .shead { margin-bottom: 1.5cqw; }
+    .slide.dense .sbody { gap: 1.2cqw; }
+    .slide.dense .grid { gap: 1cqw; }
+    .slide.dense .split { gap: 2cqw; }
+    .slide.dense h2 { font-size: 2.62cqw; }
+    .slide.dense .ssub { font-size: 1.3cqw; margin-top: .8cqw; }
+    .slide.dense .p,
+    .slide.dense .cb,
+    .slide.dense ul.li,
+    .slide.dense .call { font-size: 1.1cqw; line-height: 1.44; }
+    .slide.dense .ct { font-size: 1.2cqw; }
+    .slide.dense .card { padding: 1cqw 1.1cqw; gap: .4cqw; }
+    .slide.dense .call { padding: .9cqw 1.1cqw; }
+    .slide.dense table.t { font-size: 1.02cqw; }
+    .slide.dense table.t td { padding: .55cqw .85cqw .55cqw 0; }
+    .slide.dense table.t td.k { font-size: 1cqw; }
+    .slide.dense figcaption { font-size: .78cqw; }
+  }
+
+  /* Container units size the slide to the stage; below this width the stage is so narrow
+     that cqw text becomes unreadable, so the deck falls back to absolute sizes and stacks. */
+  @media (max-width: 860px) {
+    .slide { aspect-ratio: auto; padding: 1.5rem 1.15rem 1.8rem; }
+    .shead { margin-bottom: 1.1rem; }
+    .sbody { gap: 1.1rem; }
+    .grid { gap: .8rem; }
+    .split, .g2, .g3, .g4, .g5 { grid-template-columns: 1fr; }
+    .split { gap: 1.1rem; }
+    .snum { font-size: .66rem; gap: .5rem; margin-bottom: .7rem; }
+    h2 { font-size: 1.52rem; }
+    .ssub { font-size: .96rem; margin-top: .7rem; }
+    .p, .cb, ul.li, .call { font-size: .92rem; }
+    ul.li { padding-left: 1.1rem; }
+    ul.li li { margin-bottom: .35rem; }
+    .ct { font-size: 1.02rem; }
+    .lbl, figcaption { font-size: .64rem; }
+    .lede { font-size: 1.3rem; }
+    .card { padding: .85rem .9rem; gap: .4rem; }
+    .call { padding: .8rem .9rem; }
+    table.t { font-size: .84rem; }
+    table.t th { font-size: .62rem; padding-bottom: .45rem; }
+    table.t td { padding: .5rem .7rem .5rem 0; }
+    table.t td.k { font-size: .86rem; }
+    table.t td.num, table.t td.mono { font-size: .78rem; }
+    .chip { font-size: .64rem; padding: .22rem .45rem; }
+    .stat .n { font-size: 2.1rem; }
+    .stat .n.big { font-size: 3.1rem; }
+    .stat .u { font-size: .85rem; }
+    .bar { grid-template-columns: 6.5rem 1fr 3.2rem; gap: .6rem; }
+    .bar .bl { font-size: .78rem; }
+    .bar .bt { height: .8rem; }
+    .bar .bv { font-size: .74rem; }
+    .meter i { width: 1.5rem; height: .42rem; }
+    .pipe { grid-template-columns: repeat(2, 1fr); }
+    .pipe .st { padding: .6rem .55rem; }
+    .pipe .n { font-size: .62rem; }
+    .pipe .t { font-size: .8rem; }
+    .pipe .a { font-size: .58rem; }
+    .cover h1 { font-size: 2.15rem; margin-bottom: .9rem; }
+    .cover .sub { font-size: 1.02rem; }
+    .cover .meta { margin-top: 1.5rem; padding-top: .9rem; gap: 0 1.4rem; }
+    .cover .meta dt { font-size: .6rem; margin-bottom: .2rem; }
+    .cover .meta dd { font-size: .88rem; }
+    .divider h2 { font-size: 2rem; }
+    .divider .pn { font-size: .68rem; margin-bottom: .8rem; }
+    .divider .pd { font-size: 1rem; margin-top: .9rem; }
+  }
+
+  /* slide header */
+  .shead { flex: none; margin-bottom: 2.2cqw; }
+  .snum {
+    font-family: var(--mono); font-size: .92cqw; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: .8cqw; margin-bottom: 1.1cqw;
+  }
+  .snum::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--rule); }
+  .snum b { font-weight: 600; color: var(--ink-soft); }
+  h2 {
+    font-family: var(--sans); font-weight: 720;
+    font-size: 3.05cqw; line-height: 1.1; letter-spacing: -.028em;
+    margin: 0; text-wrap: balance; max-width: 30ch;
+  }
+  .ssub {
+    font-family: var(--serif); font-size: 1.42cqw; line-height: 1.42;
+    color: var(--ink-mid); margin: 1.1cqw 0 0; max-width: 74ch;
+  }
+  .sbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+           justify-content: center; gap: 1.8cqw; }
+
+  /* ══════════ PRIMITIVES ══════════ */
+  .p { font-size: 1.28cqw; line-height: 1.5; margin: 0; color: var(--ink-mid); max-width: 72ch; }
+  .p strong, strong { font-weight: 640; color: var(--ink); }
+  .lede {
+    font-family: var(--sans); font-weight: 620; font-size: 2.05cqw;
+    line-height: 1.24; letter-spacing: -.02em; margin: 0; text-wrap: balance; max-width: 34ch;
+  }
+  em.q { font-style: italic; }
+
+  .grid { display: grid; gap: 1.5cqw; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g5 { grid-template-columns: repeat(5, 1fr); }
+  .split { display: grid; grid-template-columns: 1.05fr 1fr; gap: 2.6cqw; align-items: start; }
+  .split.wide-left { grid-template-columns: 1.5fr 1fr; }
+  .split.wide-right { grid-template-columns: 1fr 1.5fr; }
+  .stack { display: flex; flex-direction: column; gap: 1.1cqw; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--rule-soft);
+    padding: 1.4cqw 1.5cqw; display: flex; flex-direction: column; gap: .55cqw;
+  }
+  .card.sunk { background: var(--sunken); border-color: transparent; }
+  .card.tint { background: var(--accent-soft); border-color: transparent; }
+  .card.warn { background: var(--amber-soft); border-color: transparent; }
+  .ct {
+    font-family: var(--sans); font-weight: 640; font-size: 1.32cqw;
+    letter-spacing: -.014em; line-height: 1.22; margin: 0;
+  }
+  .cb { font-size: 1.18cqw; line-height: 1.45; color: var(--ink-mid); margin: 0; }
+  .lbl {
+    font-family: var(--mono); font-size: .82cqw; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-soft); margin: 0;
+  }
+  .lbl.acc { color: var(--accent); }
+  .lbl.amb { color: var(--amber-strong); }
+
+  ul.li { margin: 0; padding-left: 1.5cqw; font-size: 1.2cqw; line-height: 1.46; color: var(--ink-mid); }
+  ul.li li { margin-bottom: .5cqw; }
+  ul.li li::marker { color: var(--accent); }
+  ul.li.tight li { margin-bottom: .3cqw; }
+
+  /* stat block */
+  .stat { display: flex; flex-direction: column; gap: .3cqw; }
+  .stat .n {
+    font-family: var(--sans); font-weight: 760; font-size: 3.6cqw;
+    letter-spacing: -.035em; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .stat .n.big { font-size: 6cqw; }
+  .stat .n.acc { color: var(--accent); }
+  .stat .u { font-size: 1.1cqw; color: var(--ink-mid); line-height: 1.35; }
+
+  /* callout */
+  .call {
+    border-left: 2px solid var(--accent); background: var(--accent-soft);
+    padding: 1.15cqw 1.4cqw; font-size: 1.24cqw; line-height: 1.45; color: var(--ink-mid);
+  }
+  .call.amb { border-left-color: var(--amber); background: var(--amber-soft); }
+  .call.plain { background: var(--sunken); border-left-color: var(--rule); }
+  .call b, .call strong { color: var(--ink); font-weight: 640; }
+
+  /* table */
+  table.t { width: 100%; border-collapse: collapse; font-size: 1.12cqw; }
+  table.t th {
+    font-family: var(--mono); font-weight: 500; font-size: .8cqw; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-soft); text-align: left;
+    padding: 0 1cqw .6cqw 0; border-bottom: 1px solid var(--rule); vertical-align: bottom;
+  }
+  table.t td {
+    padding: .72cqw 1cqw .72cqw 0; border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top; color: var(--ink-mid); line-height: 1.4;
+  }
+  table.t tr:last-child td { border-bottom: none; }
+  table.t td.k { color: var(--ink); font-family: var(--sans); font-weight: 600; font-size: 1.1cqw; }
+  table.t td.num { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 1cqw; }
+  table.t td.mono { font-family: var(--mono); font-size: .96cqw; }
+
+  /* chips */
+  .chips { display: flex; flex-wrap: wrap; gap: .5cqw; }
+  .chip {
+    font-family: var(--mono); font-size: .82cqw; letter-spacing: .08em;
+    padding: .3cqw .62cqw; background: var(--sunken); color: var(--ink-mid); border-radius: 2px;
+  }
+  .chip.acc { background: var(--accent-soft); color: var(--accent-deep); }
+  .chip.amb { background: var(--amber-soft); color: var(--amber-strong); }
+  .chip.l1 { background: var(--lvl1); color: var(--on1); }
+  .chip.l2 { background: var(--lvl2); color: var(--on2); }
+  .chip.l3 { background: var(--lvl3); color: var(--on3); }
+  .chip.l4 { background: var(--lvl4); color: var(--on4); }
+
+  /* ordinal meter — level reads as fill count, ramp step, and label */
+  .meter { display: flex; gap: .28cqw; }
+  .meter i { display: block; width: 1.5cqw; height: .55cqw; background: var(--lvl-track); }
+  .meter[data-lvl="1"] i:nth-child(-n+1) { background: var(--lvl1); }
+  .meter[data-lvl="2"] i:nth-child(-n+2) { background: var(--lvl2); }
+  .meter[data-lvl="3"] i:nth-child(-n+3) { background: var(--lvl3); }
+  .meter[data-lvl="4"] i:nth-child(-n+4) { background: var(--lvl4); }
+
+  /* bar comparison */
+  .bars { display: flex; flex-direction: column; gap: .7cqw; }
+  .bar { display: grid; grid-template-columns: 13cqw 1fr 5.5cqw; align-items: center; gap: .9cqw; }
+  .bar .bl { font-size: 1.08cqw; color: var(--ink-mid); line-height: 1.25; }
+  .bar .bt { height: 1.1cqw; background: var(--lvl-track); position: relative; }
+  .bar .bf { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+  .bar .bf.mute { background: var(--rule); }
+  .bar .bf.amb { background: var(--amber); }
+  .bar .bv { font-family: var(--mono); font-size: 1cqw; color: var(--ink); text-align: right;
+             font-variant-numeric: tabular-nums; }
+
+  /* figure */
+  figure.fig { margin: 0; display: flex; flex-direction: column; gap: .7cqw; }
+  figure.fig svg { width: 100%; height: auto; display: block; color: var(--ink-mid); }
+  figcaption {
+    font-family: var(--mono); font-size: .82cqw; letter-spacing: .06em;
+    color: var(--ink-soft); line-height: 1.4;
+  }
+
+  /* pipeline strip */
+  .pipe { display: grid; grid-template-columns: repeat(8, 1fr); gap: 1px;
+          background: var(--rule-soft); border: 1px solid var(--rule-soft); }
+  .pipe .st { background: var(--surface); padding: .8cqw .7cqw .85cqw; display: flex;
+              flex-direction: column; gap: .22cqw; }
+  .pipe .st.ag { background: var(--sunken); }
+  .pipe .n { font-family: var(--mono); font-size: .78cqw; color: var(--accent); letter-spacing: .1em; }
+  .pipe .t { font-family: var(--sans); font-size: .95cqw; font-weight: 620; line-height: 1.2;
+             letter-spacing: -.01em; }
+  .pipe .a { font-family: var(--mono); font-size: .72cqw; text-transform: uppercase;
+             letter-spacing: .1em; color: var(--ink-soft); }
+
+  /* cover */
+  .cover { justify-content: center; gap: 0; }
+  .cover h1 {
+    font-family: var(--sans); font-weight: 760; font-size: 5.4cqw; line-height: 1.02;
+    letter-spacing: -.036em; margin: 0 0 1.6cqw; max-width: 20ch; text-wrap: balance;
+  }
+  .cover .sub { font-size: 1.75cqw; line-height: 1.42; color: var(--ink-mid); max-width: 52ch; margin: 0; }
+  .cover .meta { display: flex; flex-wrap: wrap; gap: 0 3.2cqw; border-top: 1px solid var(--rule);
+                 margin-top: 3cqw; padding-top: 1.4cqw; }
+  .cover .meta div { padding: .3cqw 0; }
+  .cover .meta dt { font-family: var(--mono); font-size: .78cqw; letter-spacing: .15em;
+                    text-transform: uppercase; color: var(--ink-soft); margin: 0 0 .35cqw; }
+  .cover .meta dd { margin: 0; font-family: var(--sans); font-size: 1.15cqw; font-weight: 570; }
+
+  /* part divider */
+  .divider { justify-content: center; background: var(--sunken); }
+  .divider .pn { font-family: var(--mono); font-size: 1.05cqw; letter-spacing: .24em;
+                 text-transform: uppercase; color: var(--accent); margin: 0 0 1.4cqw; }
+  .divider h2 { font-size: 4.4cqw; max-width: 24ch; }
+  .divider .pd { font-size: 1.6cqw; line-height: 1.42; color: var(--ink-mid);
+                 max-width: 56ch; margin: 1.5cqw 0 0; }
+
+  /* ══════════ FOOTER NAV ══════════ */
+  .nav {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    padding: .6rem clamp(.8rem, 3vw, 1.9rem) .8rem;
+    border-top: 1px solid var(--rule);
+  }
+  .prog { flex: 1 1 8rem; height: 2px; background: var(--rule-soft); position: relative; min-width: 4rem; }
+  .prog i { position: absolute; inset: 0 auto 0 0; background: var(--accent); display: block; }
+  .count { font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; color: var(--ink-soft);
+           font-variant-numeric: tabular-nums; }
+  .now { font-family: var(--mono); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase;
+         color: var(--ink-mid); flex: 0 1 auto; max-width: 34ch; overflow: hidden;
+         text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ══════════ INDEX OVERLAY ══════════ */
+  .index { display: none; position: fixed; inset: 0; background: var(--ground); z-index: 50;
+           overflow: auto; padding: clamp(1rem, 4vw, 2.6rem); }
+  .index.on { display: block; }
+  .index h3 { font-family: var(--sans); font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em;
+              margin: 0 0 1.4rem; }
+  .idxpart { font-family: var(--mono); font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+             color: var(--accent); margin: 1.8rem 0 .7rem; padding-bottom: .4rem;
+             border-bottom: 1px solid var(--rule); }
+  .idxgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .5rem; }
+  .idxi { display: flex; gap: .6rem; align-items: baseline; text-align: left; cursor: pointer;
+          background: var(--surface); border: 1px solid var(--rule-soft); padding: .6rem .7rem;
+          font-family: var(--sans); font-size: .82rem; line-height: 1.25; color: var(--ink);
+          border-radius: 2px; }
+  .idxi:hover { border-color: var(--accent); }
+  .idxi .in { font-family: var(--mono); font-size: .66rem; color: var(--accent); flex: none; }
+
+  @media print {
+    .topbar, .nav, .index { display: none !important; }
+    .slide { display: flex !important; page-break-after: always; box-shadow: none; }
+    .stage { max-width: none; }
+  }
+</style>
+
+<header class="topbar">
+  <span class="brand">SAFERai.power</span>
+  <span>Strategy &amp; worked example</span>
+  <span class="sep"></span>
+  <button class="btn" id="idxBtn" aria-haspopup="dialog">Index</button>
+</header>
+
+<div class="stagewrap">
+  <div class="stage" id="stage">
+
+<!-- shared arrowhead definitions: kept outside any hidden slide so markers always resolve -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-mid)"/>
+    </marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+    </marker>
+    <marker id="arAm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/>
+    </marker>
+  </defs>
+</svg>
+
+<!-- ══════════════════ PART I — EXECUTIVE SUMMARY ══════════════════ -->
+
+<section class="slide cover on" data-part="Executive summary" data-title="Cover">
+  <p class="snum">EPRI · Founding-member briefing · 10 August 2026</p>
+  <h1>Assuring AI inside the utility</h1>
+  <p class="sub">A research brief, a proposed operating strategy, and one use case carried
+    end to end through the framework it is meant to test.</p>
+  <dl class="meta">
+    <div><dt>Initiative</dt><dd>SAFERai.power · EPRI · OPAI-aligned</dd></div>
+    <div><dt>Announced</dt><dd>6 August 2026</dd></div>
+    <div><dt>Members</dt><dd>~28 founding organizations</dd></div>
+    <div><dt>Expert budget</dt><dd>2,000 SME hours</dd></div>
+    <div><dt>Proposed MVP</dt><dd>Tier &amp; File v1.0</dd></div>
+  </dl>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="What it is">
+  <div class="shead">
+    <p class="snum">01 <b>What it is</b></p>
+    <h2>An assurance program, not a research program</h2>
+    <p class="ssub">SAFERai.power builds the operational risk framework, evidence templates and
+      open-source tooling utilities need <em class="q">before</em> AI is put into utility workflows.
+      Its sibling, OPAI, is the build side. This is the assure side.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g5">
+      <div class="card sunk"><p class="lbl acc">S</p><p class="ct">Safety</p></div>
+      <div class="card sunk"><p class="lbl acc">A</p><p class="ct">Accountability</p></div>
+      <div class="card sunk"><p class="lbl acc">F</p><p class="ct">Fairness</p></div>
+      <div class="card sunk"><p class="lbl acc">E</p><p class="ct">Explainability</p></div>
+      <div class="card sunk"><p class="lbl acc">R</p><p class="ct">Reliability</p></div>
+    </div>
+    <p class="p">The five power-system attributes the initiative treats as the things AI can damage.
+      Four deliverable clusters follow from them:</p>
+    <div class="grid g4">
+      <div class="card"><p class="lbl">01</p><p class="ct">Risk framework</p>
+        <p class="cb">Scenarios, failure modes, autonomy levels, guardrails, use-case tiers.</p></div>
+      <div class="card"><p class="lbl">02</p><p class="ct">Evidence packages</p>
+        <p class="cb">AI System Risk File templates — provider side and deployer side.</p></div>
+      <div class="card"><p class="lbl">03</p><p class="ct">Assessment tooling</p>
+        <p class="cb">Open-source tiered assessment tool; AI System Registry prototype.</p></div>
+      <div class="card"><p class="lbl">04</p><p class="ct">Operational protocols</p>
+        <p class="cb">Tiered TEVV, monitoring triggers, runbooks, pilot playbooks.</p></div>
+    </div>
+    <div class="call"><strong>NERC is in the room.</strong> A reliability organization inside a
+      voluntary framework effort is unusual and valuable — it gives the framework a path to being
+      recognized rather than merely published. It also means the group must be disciplined about not
+      writing anything that reads like a draft reliability standard before it is ready.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="The line to draw first">
+  <div class="shead">
+    <p class="snum">02 <b>The distinction</b></p>
+    <h2>Draw this line in the first two minutes of every briefing</h2>
+    <p class="ssub">There is a large, fast-moving 2026 regulatory workstream about AI and the grid
+      that is <em class="q">not</em> this. Executives who conflate them disengage — they hear
+      &ldquo;AI and the grid,&rdquo; map it to the data-center interconnection fight, and assume
+      it is covered.</p>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 250" role="img" aria-label="Two separate workstreams: AI as a load, governed by FERC and NERC Project 2026-02, versus AI as a tool inside the utility, which is SAFERai.power's scope. They converge only where a utility uses AI to forecast or manage computational loads.">
+        <!-- top lane: AI as a load -->
+        <text x="0" y="16" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.6" fill="currentColor">AI AS A LOAD  —  NOT THIS PROGRAM</text>
+        <rect x="0" y="30" width="180" height="52" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="90" y="52" text-anchor="middle" font-size="13" fill="currentColor">Hyperscale AI</text>
+        <text x="90" y="68" text-anchor="middle" font-size="13" fill="currentColor">campus</text>
+        <line x1="180" y1="56" x2="300" y2="56" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+        <text x="240" y="48" text-anchor="middle" font-size="11" fill="currentColor">interconnects</text>
+        <rect x="305" y="30" width="180" height="52" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="395" y="61" text-anchor="middle" font-size="13" fill="currentColor">The grid</text>
+        <line x1="485" y1="56" x2="605" y2="56" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+        <text x="545" y="48" text-anchor="middle" font-size="11" fill="currentColor">regulated by</text>
+        <rect x="610" y="30" width="270" height="52" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="745" y="52" text-anchor="middle" font-size="12" fill="currentColor">FERC order 16 Jul 2026 →</text>
+        <text x="745" y="68" text-anchor="middle" font-size="12" fill="currentColor">NERC Project 2026-02</text>
+
+        <!-- bottom lane: AI as a tool -->
+        <text x="0" y="146" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.6" fill="var(--accent)">AI AS A TOOL INSIDE THE UTILITY  —  SAFERai.power</text>
+        <rect x="0" y="160" width="180" height="52" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="90" y="182" text-anchor="middle" font-size="13" fill="var(--accent-deep)">Vision model,</text>
+        <text x="90" y="198" text-anchor="middle" font-size="13" fill="var(--accent-deep)">copilot, agent</text>
+        <line x1="180" y1="186" x2="300" y2="186" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+        <text x="240" y="178" text-anchor="middle" font-size="11" fill="var(--accent)">decides / acts in</text>
+        <rect x="305" y="160" width="180" height="52" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="395" y="182" text-anchor="middle" font-size="13" fill="var(--accent-deep)">Utility workflow</text>
+        <text x="395" y="198" text-anchor="middle" font-size="13" fill="var(--accent-deep)">ops · field · OT</text>
+        <line x1="485" y1="186" x2="605" y2="186" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+        <text x="545" y="178" text-anchor="middle" font-size="11" fill="var(--accent)">assured by</text>
+        <rect x="610" y="160" width="270" height="52" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="745" y="191" text-anchor="middle" font-size="13" fill="var(--accent-deep)">Tier &amp; File — this program</text>
+
+        <!-- convergence -->
+        <path d="M900,56 C932,56 932,186 900,186" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="940" y="117" font-size="11" fill="currentColor">one</text>
+        <text x="940" y="131" font-size="11" fill="currentColor">overlap</text>
+      </svg>
+      <figcaption>The only overlap: when a utility uses AI to forecast or manage those computational
+        loads, it is a SAFERai use case operating on a Project 2026-02 object.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="The binding constraint">
+  <div class="shead">
+    <p class="snum">03 <b>The constraint</b></p>
+    <h2>The whole expert budget is about one person-year</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <div class="card sunk">
+          <p class="lbl">The arithmetic that governs everything downstream</p>
+          <p class="ct" style="font-family:var(--mono); font-size:1.5cqw; font-weight:500; line-height:1.6">
+            25 organizations &times; 80 hours<br>= 2,000 SME hours<br>&asymp; 0.96 FTE-years<br>&asymp; 3 hours / person / week</p>
+        </div>
+        <p class="p">Each participating organization contributes roughly <strong>80 hours of skilled
+          SME time</strong>, and participation qualifies for <strong>Self Direct Funds</strong> — which
+          removes the &ldquo;we have no budget line for this&rdquo; objection almost entirely and should
+          lead every membership conversation.</p>
+        <p class="p">But the hours are the real constraint, and they rule out the default mode of
+          industry consortia: convening working groups to author documents from a blank page.</p>
+      </div>
+      <div class="stack">
+        <div class="stat">
+          <span class="n big acc">2,000</span>
+          <span class="u">total SME hours available across the entire founding cohort</span>
+        </div>
+        <div class="call amb"><strong>One person-year does not write a standard.</strong>
+          One person-year <em class="q">can</em> harvest, reconcile, test and ratify material that
+          already exists.</div>
+        <p class="p">Print that number at the top of every planning document. Everything else in this
+          deck is a consequence of it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="Harvest, don't author">
+  <div class="shead">
+    <p class="snum">04 <b>The thesis</b></p>
+    <h2>Harvest, tier, test, ratify. Do not author.</h2>
+    <p class="ssub">Four other regulated sectors have already spent decades solving structurally
+      identical problems. Not one element of the proposed spine requires original research — which is
+      what makes 2,000 hours sufficient.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g4">
+      <div class="card tint"><p class="lbl acc">Automotive</p><p class="ct">UL 4600</p>
+        <p class="cb">Standardize the <em class="q">argument</em>, not the system. The shape of the
+          risk file.</p></div>
+      <div class="card tint"><p class="lbl acc">Medical devices</p><p class="ct">FDA PCCP</p>
+        <p class="cb">Pre-authorize an envelope of future model change. How the framework survives
+          vendor updates.</p></div>
+      <div class="card tint"><p class="lbl acc">Aviation &amp; nuclear</p><p class="ct">ASIAS · INPO</p>
+        <p class="cb">Non-punitive information sharing. What makes incident data flow at all.</p></div>
+      <div class="card tint"><p class="lbl acc">Banking</p><p class="ct">SR 11-7 → SR 26-2</p>
+        <p class="cb">Tiered model inventory and proportional validation. The registry's field
+          structure.</p></div>
+    </div>
+    <div class="call"><strong>The value this group adds is sector-specific judgment</strong> —
+      which of these proven mechanisms apply to a distribution-grid vision model, at what threshold,
+      with what evidence, and what &ldquo;good enough to deploy&rdquo; means at each tier. That judgment
+      can only come from the 25 members, and it is the only thing that can only come from them.</div>
+    <p class="p">Every hour spent drafting prose that already exists elsewhere is an hour stolen from
+      the one thing the group is uniquely able to do.</p>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="The MVP">
+  <div class="shead">
+    <p class="snum">05 <b>The MVP</b></p>
+    <h2>Tier &amp; File v1.0 — and nothing more</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <div class="call"><strong>MVP =</strong> a use-case tiering rubric and a minimum evidence
+          package (the AI System Risk File), calibrated against ~50 real utility AI use cases
+          contributed by member companies.</div>
+        <p class="p">Not the registry. Not the open-source toolkit. Not the monitoring runbooks.
+          Not a certification scheme. The MVP must be the thinnest artifact that changes a real
+          decision — and Tier &amp; File does, on day one:</p>
+        <ul class="li">
+          <li>A utility can classify a use case and know what evidence to demand — <strong>the question
+            every member is being asked internally right now, with no good answer.</strong></li>
+          <li>Twenty-five utilities asking a vendor for the <em class="q">same</em> evidence package is
+            a market-moving act that costs the group nothing beyond agreeing on the template.</li>
+          <li>It needs no software, no infrastructure and no funding beyond SME time — so procurement
+            cannot block it.</li>
+        </ul>
+      </div>
+      <figure class="fig">
+        <svg viewBox="0 0 460 300" role="img" aria-label="Tier and File sits on the critical path: the registry, TEVV protocols and monitoring triggers each depend on it, and none can be built first.">
+          <rect x="90" y="10" width="280" height="58" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="230" y="34" text-anchor="middle" font-size="15" font-weight="600" fill="var(--accent-deep)">Tier &amp; File v1.0</text>
+          <text x="230" y="53" text-anchor="middle" font-size="12" fill="var(--accent-deep)">rubric + risk file template</text>
+
+          <line x1="230" y1="68" x2="230" y2="96" stroke="var(--accent)" stroke-width="1"/>
+          <line x1="80" y1="96" x2="380" y2="96" stroke="var(--accent)" stroke-width="1"/>
+          <line x1="80" y1="96" x2="80" y2="128" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+          <line x1="230" y1="96" x2="230" y2="128" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+          <line x1="380" y1="96" x2="380" y2="128" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+
+          <rect x="10" y="134" width="140" height="70" fill="none" stroke="currentColor" stroke-width="1"/>
+          <text x="80" y="158" text-anchor="middle" font-size="13" fill="currentColor">Registry</text>
+          <text x="80" y="177" text-anchor="middle" font-size="11" fill="currentColor">no tiering schema,</text>
+          <text x="80" y="191" text-anchor="middle" font-size="11" fill="currentColor">no columns</text>
+
+          <rect x="160" y="134" width="140" height="70" fill="none" stroke="currentColor" stroke-width="1"/>
+          <text x="230" y="158" text-anchor="middle" font-size="13" fill="currentColor">TEVV protocols</text>
+          <text x="230" y="177" text-anchor="middle" font-size="11" fill="currentColor">no tiers,</text>
+          <text x="230" y="191" text-anchor="middle" font-size="11" fill="currentColor">no acceptance criteria</text>
+
+          <rect x="310" y="134" width="140" height="70" fill="none" stroke="currentColor" stroke-width="1"/>
+          <text x="380" y="158" text-anchor="middle" font-size="13" fill="currentColor">Monitoring</text>
+          <text x="380" y="177" text-anchor="middle" font-size="11" fill="currentColor">no evidence baseline,</text>
+          <text x="380" y="191" text-anchor="middle" font-size="11" fill="currentColor">nothing to monitor</text>
+
+          <text x="230" y="240" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--accent)">EVERY LATER DELIVERABLE DEPENDS ON IT</text>
+          <line x1="60" y1="256" x2="400" y2="256" stroke="var(--rule)" stroke-width="1"/>
+          <text x="230" y="278" text-anchor="middle" font-size="12" fill="currentColor">Build it first, or build the rest twice.</text>
+        </svg>
+        <figcaption>Tier &amp; File is on the critical path for everything else.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="The multiplier">
+  <div class="shead">
+    <p class="snum">06 <b>The multiplier</b></p>
+    <h2>Agentic AI is the only lever that moves the constraint</h2>
+    <p class="ssub">More members adds coordination cost about as fast as it adds hours. More meetings
+      consumes the budget rather than extending it. Only automating the non-judgment work actually
+      changes the number — and the division of labour here is unusually clean.</p>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="lbl">The 80 hours, reallocated</p>
+        <div class="bars">
+          <div class="bar"><span class="bl">Draft risk files</span>
+            <span class="bt"><i class="bf mute" style="width:80%"></i></span><span class="bv">16 → 6</span></div>
+          <div class="bar"><span class="bl">Pod sessions</span>
+            <span class="bt"><i class="bf mute" style="width:100%"></i></span><span class="bv">20 → 12</span></div>
+          <div class="bar"><span class="bl">Red-team peers</span>
+            <span class="bt"><i class="bf" style="width:100%"></i></span><span class="bv">16 → 20</span></div>
+          <div class="bar"><span class="bl">Internal socialization</span>
+            <span class="bt"><i class="bf mute" style="width:60%"></i></span><span class="bv">12 → 12</span></div>
+          <div class="bar"><span class="bl">Steering / plenary</span>
+            <span class="bt"><i class="bf mute" style="width:40%"></i></span><span class="bv">8 → 6</span></div>
+          <div class="bar"><span class="bl"><strong>Judgment reserve</strong></span>
+            <span class="bt"><i class="bf" style="width:100%"></i></span><span class="bv">8 → 24</span></div>
+        </div>
+        <div class="call"><strong>The member's hours do not go down.</strong> The fraction spent on the
+          thing only they can do goes from <strong>10% to 30%</strong>. Same cost, roughly three times
+          the judgment.</div>
+      </div>
+      <div class="stack">
+        <div class="card tint">
+          <p class="lbl acc">The organizing idea</p>
+          <p class="ct">The agent fleet is Use Case Zero</p>
+          <p class="cb">Every agent built to deliver SAFERai.power is itself tiered, risk-filed,
+            guardrailed and registered — under the framework it is helping to build. Eight to ten
+            completed risk files exist before week four, authored by the people who wrote the
+            template.</p>
+        </div>
+        <div class="card sunk">
+          <p class="lbl">The hard rule</p>
+          <p class="ct">Agents draft. Members decide.</p>
+          <p class="cb">Nothing enters v1.0 on agent authority. Every agent output has a named human
+            ratifier.</p>
+        </div>
+        <div class="stat"><span class="n acc">16–18 wks</span>
+          <span class="u">to a ratified MVP instead of 26, with ~3&times; the calibration corpus, at the
+            same 2,000 hours</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="Proof — VMS-1">
+  <div class="shead">
+    <p class="snum">07 <b>Proof</b></p>
+    <h2>One use case, end to end, in three and a half hours</h2>
+    <p class="ssub">VMS-1 — a vegetation-encroachment model that writes trim work orders directly into
+      the WMS across 12,400 circuit miles. Illustrative composite. Part III walks every stage.</p>
+  </div>
+  <div class="sbody">
+    <div class="pipe">
+      <div class="st"><span class="n">00</span><span class="t">Intake</span><span class="a">Member · 10m</span></div>
+      <div class="st ag"><span class="n">01</span><span class="t">Agent pre-fill</span><span class="a">Agent · 2h</span></div>
+      <div class="st"><span class="n">02</span><span class="t">Human tiering</span><span class="a">Member · 40m</span></div>
+      <div class="st ag"><span class="n">03</span><span class="t">Copilot 2nd opinion</span><span class="a">Agent · 4m</span></div>
+      <div class="st"><span class="n">04</span><span class="t">Close the gaps</span><span class="a">Member · 75m</span></div>
+      <div class="st ag"><span class="n">05</span><span class="t">Agent red team</span><span class="a">Agent · 20m</span></div>
+      <div class="st"><span class="n">06</span><span class="t">Cross-member review</span><span class="a">Peer · 60m</span></div>
+      <div class="st"><span class="n">07</span><span class="t">Ratify &amp; publish</span><span class="a">Pod · 15m</span></div>
+    </div>
+    <div class="grid g4">
+      <div class="stat"><span class="n acc">17%</span><span class="u">of assessed spans fell outside the
+        operating envelope — and had been auto-processed anyway, for three years</span></div>
+      <div class="stat"><span class="n acc">4</span><span class="u">gaps the agent refused to fill.
+        The gaps are the product, not the seven populated fields</span></div>
+      <div class="stat"><span class="n acc">3</span><span class="u">utilities, three defensible tiers on
+        the same evidence — the disagreement is the deliverable</span></div>
+      <div class="stat"><span class="n acc">2</span><span class="u">framework changes that now apply to
+        all 25 members, from one member filling in a template</span></div>
+    </div>
+    <div class="call amb"><strong>Neither framework change was anybody's idea in a working session.</strong>
+      Both fell out of one member trying to document a system they had run for three years without
+      incident — and discovering that its central performance claim had no evidence path.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Executive summary" data-title="What we are asking for">
+  <div class="shead">
+    <p class="snum">08 <b>The ask</b></p>
+    <h2>Three decisions and thirteen week-one actions</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-right">
+      <div class="stack">
+        <div class="card tint"><p class="lbl acc">Decision 1</p><p class="ct">Adopt harvest-and-ratify
+          as the operating model</p><p class="cb">Publish the 80-hour allocation and the week-12 gate at
+          kickoff. Report artifacts completed, not attendance.</p></div>
+        <div class="card tint"><p class="lbl acc">Decision 2</p><p class="ct">Scope the MVP to
+          Tier &amp; File</p><p class="cb">Everything else is Release 2 or later, gated on adoption
+          rather than elapsed time.</p></div>
+        <div class="card tint"><p class="lbl acc">Decision 3</p><p class="ct">Stand up the agent fleet
+          in week one</p><p class="cb">The fleet is a week-one deliverable, not a phase-two idea — the
+          compression depends on it.</p></div>
+      </div>
+      <div class="stack">
+        <p class="lbl">The five that cannot slip</p>
+        <table class="t">
+          <thead><tr><th>Action</th><th>Owner</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Start legal work on non-punitive incident sharing<br>
+              <span style="font-weight:400; color:var(--ink-mid)">Longest lead item in the whole program</span></td>
+              <td>Pod D + counsel</td><td class="mono">Wk 1</td></tr>
+            <tr><td class="k">Stand up the Harvester and Risk File Drafter</td><td>EPRI + tech members</td><td class="mono">Wk 1</td></tr>
+            <tr><td class="k">Obtain the OPAI 250+ use-case corpus</td><td>Pod A</td><td class="mono">Wk 1</td></tr>
+            <tr><td class="k">Set provenance-tagging and mixed-model policy<br>
+              <span style="font-weight:400; color:var(--ink-mid)">Before any file is drafted, so convergence collapse stays measurable</span></td>
+              <td>Pod A + Steering</td><td class="mono">Wk 2</td></tr>
+            <tr><td class="k">Each member names 2 real in-flight use cases</td><td>All members</td><td class="mono">Wk 3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ PART II — FRAMEWORK & STRATEGY ══════════════════ -->
+
+<section class="slide divider" data-part="Framework &amp; strategy" data-title="Part II — divider">
+  <p class="pn">Part II</p>
+  <h2>The framework, the sources, and how the group should run</h2>
+  <p class="pd">Where the material comes from, what it is missing, who owns which piece, and the
+    26-week path to a ratified MVP — compressed to 16–18 by the fleet.</p>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="The roster is the design">
+  <div class="shead">
+    <p class="snum">09 <b>Membership</b></p>
+    <h2>The roster is asymmetric on purpose</h2>
+    <p class="ssub">The framework only works if it is written to be used across the boundary between
+      these groups — a utility asking a vendor for evidence, in a form the vendor can actually
+      produce.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g4">
+      <div class="card"><p class="lbl acc">Evidence consumers</p><p class="ct">Investor-owned &amp; large utilities</p>
+        <p class="cb">Alliant · Ameren · Arizona Public Service · CenterPoint · Con Edison ·
+          Constellation · Duke · Exelon · PG&amp;E · SCE · Southern Company · WEC</p></div>
+      <div class="card"><p class="lbl acc">Evidence consumers</p><p class="ct">Public power · co-op · federal</p>
+        <p class="cb">Cooperative Energy · CPS Energy · Nebraska PPD · NYPA · Omaha PPD ·
+          Salt River Project · TVA</p></div>
+      <div class="card"><p class="lbl acc">Systemic risk holders</p><p class="ct">Transmission · markets · reliability</p>
+        <p class="cb">ATC · MISO · PJM · <strong>NERC</strong></p></div>
+      <div class="card"><p class="lbl acc">Evidence producers</p><p class="ct">Technology</p>
+        <p class="cb">Microsoft · NVIDIA · HData · SHI International · World Wide Technology</p></div>
+    </div>
+    <div class="grid g2">
+      <div class="call"><strong>Vendors do not vote on ratification of evidence requirements.</strong>
+        The conflict is obvious; pre-empting it in the charter avoids a fight in month four. Vendors
+        contribute compute and engineering — high-value participation that carries no governance claim.</div>
+      <div class="call plain"><strong>Compose pods for diversity of operating context, not comfort.</strong>
+        Each pod needs at least one large IOU, one public power or co-op entity, one market/reliability
+        organization and one technology member. A pod of five large IOUs produces a rubric that only
+        works at large IOUs.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Standards — NIST">
+  <div class="shead">
+    <p class="snum">10 <b>Standards landscape · NIST</b></p>
+    <h2>A vocabulary and a completeness check — not a decision procedure</h2>
+  </div>
+  <div class="sbody">
+    <table class="t">
+      <thead><tr><th style="width:22%">Standard</th><th style="width:42%">What it gives SAFERai</th><th>Gap it leaves</th></tr></thead>
+      <tbody>
+        <tr><td class="k">AI RMF 1.0<br><span style="font-weight:400;color:var(--ink-mid)">GOVERN / MAP / MEASURE / MANAGE</span></td>
+          <td>The organizing spine. GOVERN is org-wide; MAP/MEASURE/MANAGE apply per system — exactly
+            the utility-plus-use-case split SAFERai needs.</td>
+          <td>Deliberately non-prescriptive. No thresholds, no pass/fail, no sector context.</td></tr>
+        <tr><td class="k">NIST AI 600-1<br><span style="font-weight:400;color:var(--ink-mid)">GenAI Profile, Jul 2024</span></td>
+          <td>12 GenAI-specific risk categories with suggested actions mapped back to the four functions.</td>
+          <td>GenAI-general, not OT-aware. Says nothing about a system that can trip a breaker.</td></tr>
+        <tr><td class="k">SP 800-53 AI control overlays</td>
+          <td>Would connect AI risk to the control language utility security teams already speak.</td>
+          <td><strong>Still in progress through 2026.</strong> Track and contribute — an early sector
+            overlay is high-leverage.</td></tr>
+        <tr><td class="k">CSF / SP 800-53</td>
+          <td>Already embedded in utility practice.</td>
+          <td>Pre-AI.</td></tr>
+      </tbody>
+    </table>
+    <div class="call amb"><strong>The honest read.</strong> NIST AI RMF tells you to measure; it does
+      not tell you what &ldquo;good&rdquo; looks like for a vegetation-management vision model that has
+      to make a cut/no-cut call. <strong>That gap — sector-specific acceptance criteria — is precisely
+      SAFERai.power's reason to exist</strong>, and the group should say so plainly rather than
+      positioning itself as &ldquo;implementing NIST.&rdquo;</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Standards — ISO/IEC">
+  <div class="shead">
+    <p class="snum">11 <b>Standards landscape · ISO/IEC</b></p>
+    <h2>The shell, the process, and one hard exclusion boundary</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <table class="t">
+        <thead><tr><th style="width:32%">Standard</th><th style="width:22%">Status</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td class="k">ISO/IEC 42001:2023 — AIMS</td><td><span class="chip acc">Certifiable</span></td>
+            <td>The organizational shell. Gives executives a recognizable compliance object.</td></tr>
+          <tr><td class="k">ISO/IEC 23894</td><td>Guidance</td>
+            <td>Extends ISO 31000 to AI risk — the risk-process detail 42001 requires.</td></tr>
+          <tr><td class="k">ISO/IEC 42005:2025</td><td>Guidance</td>
+            <td><strong>Closest existing analogue to the AI System Risk File.</strong> Start here, not
+              from blank paper.</td></tr>
+          <tr><td class="k">ISO/IEC 38507</td><td>Guidance</td><td>Board-level framing for the executive layer.</td></tr>
+          <tr><td class="k">ISO/IEC 5338</td><td>Guidance</td><td>Lifecycle stages — the basis for reassessment triggers.</td></tr>
+          <tr><td class="k">ISO/IEC TR 5469</td><td>Emerging TR</td>
+            <td><strong>The bridge to the functional-safety world utilities already live in.</strong> Track closely.</td></tr>
+        </tbody>
+      </table>
+      <div class="stack">
+        <div class="card warn">
+          <p class="lbl amb">Say this out loud in v1.0</p>
+          <p class="ct">IEC 61508 / 61511: AI is out of scope for safety instrumented functions</p>
+          <p class="cb">AI has historically been disallowed as a technique for achieving functional
+            safety, and SIL certification does not accommodate ML. Assume any AI touching a safety
+            instrumented function is out of scope for now — and say so explicitly.</p>
+          <p class="cb"><strong>A clear exclusion boundary is itself a valuable deliverable.</strong></p>
+        </div>
+        <div class="card tint">
+          <p class="lbl acc">The most reusable structural idea in the whole set</p>
+          <p class="ct">IEC 62443 zones and conduits</p>
+          <p class="cb">An AI agent is a thing that lives in a zone and communicates through a conduit
+            with defined, enforceable constraints. Lean on it hard for the guardrail catalog.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Zones and conduits">
+  <div class="shead">
+    <p class="snum">12 <b>Containment</b></p>
+    <h2>Where an AI system may live, and what it may touch</h2>
+    <p class="ssub">IEC 62443's zones-and-conduits model already exists in every utility's OT security
+      architecture. It is the natural mechanism for containing AI, and it needs no new vocabulary.</p>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 236" role="img" aria-label="An AI system placed in the enterprise IT zone communicates to the operations zone through a single conduit carrying advisory output only, with a human confirmation gate; the OT zone below is reachable only through a second conduit that the AI system has no permission to cross.">
+        <!-- zone 1 -->
+        <rect x="4" y="26" width="290" height="180" fill="var(--sunken)" stroke="var(--rule)" stroke-width="1"/>
+        <text x="16" y="18" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--ink-soft)">ZONE · ENTERPRISE IT</text>
+        <rect x="34" y="60" width="230" height="54" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="149" y="82" text-anchor="middle" font-size="14" font-weight="600" fill="var(--accent-deep)">AI system</text>
+        <text x="149" y="101" text-anchor="middle" font-size="11" fill="var(--accent-deep)">model + tools + memory</text>
+        <text x="149" y="140" text-anchor="middle" font-size="11.5" fill="currentColor">Permissions bounded here.</text>
+        <text x="149" y="158" text-anchor="middle" font-size="11.5" fill="currentColor">Rate limits, output validation,</text>
+        <text x="149" y="176" text-anchor="middle" font-size="11.5" fill="currentColor">logging, kill-switch owner named.</text>
+
+        <!-- conduit 1 -->
+        <line x1="294" y1="87" x2="386" y2="87" stroke="var(--accent)" stroke-width="2" marker-end="url(#arA)"/>
+        <text x="340" y="76" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1.2" fill="var(--accent)">CONDUIT</text>
+        <text x="340" y="106" text-anchor="middle" font-size="11" fill="currentColor">advisory output only</text>
+
+        <!-- zone 2 -->
+        <rect x="390" y="26" width="290" height="180" fill="var(--sunken)" stroke="var(--rule)" stroke-width="1"/>
+        <text x="402" y="18" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--ink-soft)">ZONE · OPERATIONS</text>
+        <rect x="420" y="60" width="230" height="54" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="535" y="82" text-anchor="middle" font-size="14" fill="currentColor">Human confirmation</text>
+        <text x="535" y="101" text-anchor="middle" font-size="11" fill="currentColor">gate — named authority</text>
+        <text x="535" y="150" text-anchor="middle" font-size="11.5" fill="currentColor">The gate is the credited</text>
+        <text x="535" y="168" text-anchor="middle" font-size="11.5" fill="currentColor">protection layer, not the model.</text>
+
+        <!-- conduit 2 -->
+        <line x1="680" y1="87" x2="772" y2="87" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+        <text x="726" y="76" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1.2" fill="var(--ink-soft)">CONDUIT</text>
+        <text x="726" y="106" text-anchor="middle" font-size="11" fill="currentColor">authorized action</text>
+
+        <!-- zone 3 -->
+        <rect x="776" y="26" width="220" height="180" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <text x="788" y="18" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--ink-soft)">ZONE · OT / FIELD</text>
+        <text x="886" y="88" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Equipment</text>
+        <text x="886" y="130" text-anchor="middle" font-size="11.5" fill="currentColor">No conduit from the AI</text>
+        <text x="886" y="148" text-anchor="middle" font-size="11.5" fill="currentColor">zone reaches here.</text>
+
+        <!-- blocked path -->
+        <path d="M149,206 C149,228 886,228 886,208" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <line x1="505" y1="212" x2="527" y2="230" stroke="var(--amber)" stroke-width="2"/>
+        <line x1="527" y1="212" x2="505" y2="230" stroke="var(--amber)" stroke-width="2"/>
+      </svg>
+      <figcaption>As tier rises, weight shifts from evidence about the model toward constraints on
+        what the system may do. The amber path is the one the architecture must make impossible.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="The regulatory clock">
+  <div class="shead">
+    <p class="snum">13 <b>Regulatory context</b></p>
+    <h2>The clock everyone in the sector is already watching</h2>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 210" role="img" aria-label="Timeline from May 2026 to December 2027 showing NERC's Level 3 Alert, FERC's order, the SAFERai launch, the EU AI Act Annex III original deadline, NERC's standards filing deadline, the Phase II work plan, and the provisionally delayed Annex III date.">
+        <line x1="20" y1="118" x2="980" y2="118" stroke="var(--rule)" stroke-width="2"/>
+
+        <!-- ticks: positions -->
+        <g font-size="11.5" fill="currentColor" text-anchor="middle">
+          <!-- 4 May 2026 -->
+          <circle cx="60" cy="118" r="5" fill="var(--ink-mid)"/>
+          <line x1="60" y1="113" x2="60" y2="72" stroke="var(--rule)" stroke-width="1"/>
+          <text x="60" y="62" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--ink-soft)">4 MAY 26</text>
+          <text x="60" y="44" font-size="11">NERC Level 3</text>
+          <text x="60" y="30" font-size="11">Alert</text>
+
+          <!-- 16 Jul 2026 -->
+          <circle cx="215" cy="118" r="5" fill="var(--ink-mid)"/>
+          <line x1="215" y1="123" x2="215" y2="160" stroke="var(--rule)" stroke-width="1"/>
+          <text x="215" y="176" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--ink-soft)">16 JUL 26</text>
+          <text x="215" y="194" font-size="11">FERC directs NERC</text>
+
+          <!-- 2 Aug 2026 -->
+          <circle cx="290" cy="118" r="5" fill="var(--amber)"/>
+          <line x1="290" y1="113" x2="290" y2="72" stroke="var(--amber)" stroke-width="1"/>
+          <text x="290" y="62" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--amber)">2 AUG 26</text>
+          <text x="290" y="44" font-size="11">EU AI Act Annex III</text>
+          <text x="290" y="30" font-size="11">— date on paper</text>
+
+          <!-- 6 Aug 2026 SAFERai -->
+          <circle cx="350" cy="118" r="6.5" fill="var(--accent)"/>
+          <line x1="350" y1="123" x2="350" y2="160" stroke="var(--accent)" stroke-width="1"/>
+          <text x="350" y="176" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--accent)">6 AUG 26</text>
+          <text x="350" y="194" font-size="11" fill="var(--accent-deep)" font-weight="600">SAFERai.power launch</text>
+
+          <!-- 31 Dec 2026 -->
+          <circle cx="560" cy="118" r="5" fill="var(--ink-mid)"/>
+          <line x1="560" y1="113" x2="560" y2="72" stroke="var(--rule)" stroke-width="1"/>
+          <text x="560" y="62" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--ink-soft)">31 DEC 26</text>
+          <text x="560" y="44" font-size="11">NERC files mandatory</text>
+          <text x="560" y="30" font-size="11">standards</text>
+
+          <!-- 1 Mar 2027 -->
+          <circle cx="680" cy="118" r="5" fill="var(--ink-mid)"/>
+          <line x1="680" y1="123" x2="680" y2="160" stroke="var(--rule)" stroke-width="1"/>
+          <text x="680" y="176" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--ink-soft)">1 MAR 27</text>
+          <text x="680" y="194" font-size="11">Phase II work plan</text>
+
+          <!-- 2 Dec 2027 -->
+          <circle cx="930" cy="118" r="5" fill="var(--amber)"/>
+          <line x1="930" y1="113" x2="930" y2="72" stroke="var(--amber)" stroke-width="1"/>
+          <text x="930" y="62" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1" fill="var(--amber)">2 DEC 27</text>
+          <text x="930" y="44" font-size="11">Annex III, per the</text>
+          <text x="930" y="30" font-size="11">7 May 26 agreement</text>
+        </g>
+
+        <!-- MVP band -->
+        <rect x="350" y="104" width="250" height="28" fill="var(--accent-soft)" opacity="0.85"/>
+        <text x="475" y="123" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" letter-spacing="1.3" fill="var(--accent-deep)">16–18 WK MVP WINDOW</text>
+      </svg>
+      <figcaption>Being visibly organized on AI assurance while Project 2026-02 proceeds is worth real
+        credibility. Anchor the roadmap to EPRI's Summer Seminar and the AI and Electric Power Summit,
+        not to abstract quarters.</figcaption>
+    </figure>
+    <div class="call amb"><strong>Do not assume the EU delay is final.</strong> Until formal
+      publication, 2 August 2026 remains the legally binding date on paper. Any US-parented utility with
+      EU operations, and every EU-domiciled vendor selling into this group, is affected.</div>
+  </div>
+</section>
+
+<section class="slide dense" data-part="Framework &amp; strategy" data-title="Steal 1 — UL 4600">
+  <div class="shead">
+    <p class="snum">14 <b>Steal 1 · automotive</b></p>
+    <h2>UL 4600 — standardize the argument, not the system</h2>
+    <p class="ssub">It solved the exact problem SAFERai faces: how do you write a standard for a system
+      whose behavior you cannot fully specify in advance?</p>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="p">Its answer is to standardize the <strong>argument</strong>. You must make a
+          structured, evidence-backed safety case, and the standard governs the shape and rigor of that
+          argument rather than the design — taking the outputs of ISO 26262, 21448, IEC 61508 and
+          MIL-STD-882 as inputs rather than competing with them.</p>
+        <div class="call"><strong>The AI System Risk File should be structured as a UL 4600-style
+          safety case</strong> — a claim about fitness for a defined use, an argument, and the evidence
+          supporting it — with the framework specifying required claims and acceptable evidence types
+          by tier.</div>
+        <p class="lbl">Companion concepts to import with it</p>
+        <ul class="li tight">
+          <li><strong>ISO 21448 (SOTIF)</strong> — hazards arising when the system works exactly as
+            designed but its performance is <em class="q">insufficient</em> for the situation. The
+            dominant AI failure mode in utility work, with no natural home in NIST AI RMF language.</li>
+          <li><strong>Operational Design Domain</strong> — the explicitly bounded conditions under
+            which the system is claimed to work. (Track <strong>ISO/PAS 8800</strong> alongside it.)</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <figure class="fig">
+          <svg viewBox="0 0 440 250" role="img" aria-label="A safety case structure: a claim about fitness for a defined use is supported by an argument, which rests on four evidence types whose required depth is set by tier.">
+            <rect x="80" y="8" width="280" height="50" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+            <text x="220" y="30" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--accent-deep)">CLAIM</text>
+            <text x="220" y="48" text-anchor="middle" font-size="11.5" fill="var(--accent-deep)">fit for this use, in this envelope</text>
+            <line x1="220" y1="58" x2="220" y2="82" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <rect x="80" y="86" width="280" height="46" fill="none" stroke="currentColor" stroke-width="1"/>
+            <text x="220" y="106" text-anchor="middle" font-size="13.5" fill="currentColor">ARGUMENT</text>
+            <text x="220" y="123" text-anchor="middle" font-size="11.5" fill="currentColor">why the evidence supports the claim</text>
+            <line x1="220" y1="132" x2="220" y2="152" stroke="currentColor" stroke-width="1"/>
+            <line x1="55" y1="152" x2="385" y2="152" stroke="currentColor" stroke-width="1"/>
+            <g font-size="11" fill="currentColor" text-anchor="middle">
+              <line x1="55" y1="152" x2="55" y2="172" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+              <line x1="165" y1="152" x2="165" y2="172" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+              <line x1="275" y1="152" x2="275" y2="172" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+              <line x1="385" y1="152" x2="385" y2="172" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+              <rect x="12" y="178" width="86" height="44" fill="var(--sunken)"/><text x="55" y="197">Envelope</text><text x="55" y="212">declaration</text>
+              <rect x="122" y="178" width="86" height="44" fill="var(--sunken)"/><text x="165" y="197">TEVV</text><text x="165" y="212">results</text>
+              <rect x="232" y="178" width="86" height="44" fill="var(--sunken)"/><text x="275" y="197">Guardrails</text><text x="275" y="212">in place</text>
+              <rect x="342" y="178" width="86" height="44" fill="var(--sunken)"/><text x="385" y="197">Monitoring</text><text x="385" y="212">plan</text>
+            </g>
+            <text x="220" y="242" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" letter-spacing="1.3" fill="var(--accent)">TIER SETS THE REQUIRED DEPTH OF EACH</text>
+          </svg>
+          <figcaption>The tier does not change the structure — only how much evidence each leg must carry.</figcaption>
+        </figure>
+        <div class="card warn"><p class="lbl amb">Rename it and make it mandatory</p>
+          <p class="ct">ODD → &ldquo;Operating Envelope&rdquo;</p>
+          <p class="cb">Most utility AI incidents will be out-of-envelope operation, and no current
+            utility practice names the envelope.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Steal 2 — FDA PCCP">
+  <div class="shead">
+    <p class="snum">15 <b>Steal 2 · medical devices</b></p>
+    <h2>FDA PCCP — the only mature answer to models that change</h2>
+    <p class="ssub">The hardest unsolved problem in regulated AI is not initial approval. It is that
+      models get retrained, vendors ship updates, and foundation models change underneath you. Every
+      static approval regime breaks on contact with this.</p>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 214" role="img" aria-label="Comparison: under static approval, each vendor model update triggers a full re-review, and reviews accumulate until the framework is abandoned. Under a predetermined change control plan, updates inside the pre-authorized envelope proceed with monitoring only, and only envelope-exceeding changes trigger review.">
+        <!-- static -->
+        <text x="0" y="14" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.5" fill="var(--amber)">STATIC APPROVAL</text>
+        <line x1="0" y1="58" x2="470" y2="58" stroke="var(--rule)" stroke-width="1.5"/>
+        <g fill="var(--amber)">
+          <circle cx="70" cy="58" r="5"/><circle cx="170" cy="58" r="5"/><circle cx="270" cy="58" r="5"/><circle cx="370" cy="58" r="5"/>
+        </g>
+        <g font-size="10.5" fill="currentColor" text-anchor="middle">
+          <text x="70" y="42">update</text><text x="170" y="42">update</text><text x="270" y="42">update</text><text x="370" y="42">update</text>
+        </g>
+        <g stroke="var(--amber)" stroke-width="1.2" marker-end="url(#arAm)">
+          <line x1="70" y1="63" x2="70" y2="86"/><line x1="170" y1="63" x2="170" y2="86"/>
+          <line x1="270" y1="63" x2="270" y2="86"/><line x1="370" y1="63" x2="370" y2="86"/>
+        </g>
+        <g font-size="10.5" fill="var(--amber-strong)" text-anchor="middle">
+          <rect x="34" y="90" width="72" height="22" fill="var(--amber-soft)"/><text x="70" y="105">re-review</text>
+          <rect x="134" y="90" width="72" height="22" fill="var(--amber-soft)"/><text x="170" y="105">re-review</text>
+          <rect x="234" y="90" width="72" height="22" fill="var(--amber-soft)"/><text x="270" y="105">re-review</text>
+          <rect x="334" y="90" width="72" height="22" fill="var(--amber-soft)"/><text x="370" y="105">re-review</text>
+        </g>
+        <text x="205" y="146" text-anchor="middle" font-size="12.5" fill="currentColor">Review burden accumulates faster than capacity.</text>
+        <text x="205" y="166" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--amber)">Framework abandoned within 18 months.</text>
+
+        <line x1="500" y1="10" x2="500" y2="190" stroke="var(--rule)" stroke-width="1"/>
+
+        <!-- PCCP -->
+        <text x="530" y="14" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.5" fill="var(--accent)">PREDETERMINED CHANGE CONTROL PLAN</text>
+        <rect x="530" y="24" width="340" height="70" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="700" y="42" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1.2" fill="var(--accent-deep)">PRE-AUTHORIZED ENVELOPE OF CHANGE</text>
+        <line x1="530" y1="72" x2="970" y2="72" stroke="var(--accent)" stroke-width="1.5"/>
+        <g fill="var(--accent)">
+          <circle cx="600" cy="72" r="5"/><circle cx="700" cy="72" r="5"/><circle cx="800" cy="72" r="5"/>
+        </g>
+        <circle cx="930" cy="72" r="5" fill="var(--amber)"/>
+        <g font-size="10.5" fill="currentColor" text-anchor="middle">
+          <text x="600" y="60">update</text><text x="700" y="60">update</text><text x="800" y="60">update</text>
+          <text x="930" y="60" fill="var(--amber)">exceeds</text>
+        </g>
+        <text x="700" y="112" text-anchor="middle" font-size="12" fill="var(--accent-deep)">inside the envelope → monitoring only, no re-review</text>
+        <line x1="930" y1="78" x2="930" y2="100" stroke="var(--amber)" stroke-width="1.2" marker-end="url(#arAm)"/>
+        <rect x="886" y="104" width="88" height="22" fill="var(--amber-soft)"/>
+        <text x="930" y="119" text-anchor="middle" font-size="10.5" fill="var(--amber-strong)">re-review</text>
+        <text x="750" y="152" text-anchor="middle" font-size="12.5" fill="currentColor">Review is spent only where the change actually leaves the</text>
+        <text x="750" y="170" text-anchor="middle" font-size="12.5" fill="currentColor">conditions the evidence covered.</text>
+      </svg>
+      <figcaption>Pre-specify what may change, by what method, validated how, with which monitoring —
+        so vendor model updates do not each trigger a fresh review cycle.</figcaption>
+    </figure>
+    <div class="call"><strong>Adopt the PCCP pattern as a first-class SAFERai artifact.</strong>
+      Without a change envelope, the framework will be abandoned within 18 months under its own review
+      burden. Pair it with the <strong>GMLP 10 guiding principles</strong> — short, readable,
+      sector-neutral, immediately adaptable.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Steals 3 &amp; 4">
+  <div class="shead">
+    <p class="snum">16 <b>Steals 3 &amp; 4 · aviation, nuclear, banking</b></p>
+    <h2>What makes data flow, and what makes validation proportional</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="lbl acc">Steal 3 — ASIAS + INPO · highest cultural value</p>
+        <p class="p"><strong>ASIAS</strong> (FAA, since 2007) fuses voluntarily reported safety data
+          across government and industry on one governing principle: <strong>information is used only
+          for safety purposes, never for punitive action.</strong> That protection is what makes the
+          data flow. <strong>INPO</strong>, created after Three Mile Island, runs confidential peer
+          review, shared performance indicators, and EPIX.</p>
+        <div class="call amb"><strong>Get the data-sharing protections drafted before the first
+          incident, not after.</strong> Utilities will not share AI incidents into a forum containing
+          their regulator unless protection is explicit and legally structured. This is legal work, not
+          technical work, and it has the longest lead time of anything in the program.</div>
+        <p class="p">The nuclear industry's post-TMI arc is also the right narrative for executive
+          sponsorship: the industry built INPO voluntarily because the alternative was worse.</p>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">Steal 4 — SR 11-7 → SR 26-2 · highest process value</p>
+        <ul class="li tight">
+          <li>Validation quality now depends on <strong>the rigor of the review rather than
+            organizational structure</strong> — a pragmatic loosening that utilities, with far thinner
+            validation benches than banks, should copy directly.</li>
+          <li><strong>Data is elevated to first-class risk</strong>: validation must reach training data,
+            lineage and representativeness, not just the fitted model.</li>
+          <li>Model definition tightened to <em class="q">complex</em> systems, explicitly excluding
+            spreadsheets, deterministic rules and ordinary software. <strong>A crisp scope boundary is
+            exactly what utilities need.</strong></li>
+        </ul>
+        <div class="call"><strong>SR 26-2 explicitly places generative and agentic AI out of scope</strong>
+          — &ldquo;novel and rapidly evolving.&rdquo; US banking regulators looked at governing
+          generative and agentic AI and declined. <strong>SAFERai.power can occupy exactly that vacated
+          ground with sector specificity</strong> — and credibly claim to be ahead of banking, which is
+          a useful thing to be able to tell a board.</div>
+        <p class="p">The single most transferable artifact is <strong>the model inventory</strong>.
+          SAFERai's AI System Registry is the same object. Copy the field structure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="The synthesis spine">
+  <div class="shead">
+    <p class="snum">17 <b>Synthesis</b></p>
+    <h2>The spine, assembled from proven parts</h2>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 300" role="img" aria-label="Nine borrowed mechanisms mapped to the SAFERai component each one becomes: UL 4600 becomes the risk file shape; SOTIF and ODD become the failure model and boundary conditions; SR 11-7 and 26-2 become the registry and validation depth; FDA PCCP becomes the change envelope; IEC 62443 becomes placement and permissions; EASA AI levels become the autonomy ladder; ATLAS and OWASP become the guardrail and test catalog; ASIAS and INPO become incident sharing; NIST AI RMF and ISO 42001 become the outer vocabulary and audit shell.">
+        <text x="0" y="14" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.5" fill="var(--ink-soft)">PROVEN ELSEWHERE</text>
+        <text x="560" y="14" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.5" fill="var(--accent)">BECOMES, HERE</text>
+        <g font-size="12.5">
+          <g transform="translate(0,26)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">UL 4600 safety case</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the shape of the AI System Risk File</text>
+          </g>
+          <g transform="translate(0,56)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">SOTIF / ODD</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the failure model and the Operating Envelope</text>
+          </g>
+          <g transform="translate(0,86)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">SR 11-7 / SR 26-2 tiered inventory</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the AI System Registry and validation depth</text>
+          </g>
+          <g transform="translate(0,116)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">FDA PCCP</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">how the framework survives model updates</text>
+          </g>
+          <g transform="translate(0,146)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">IEC 62443 zones and conduits</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">where it may live, what it may touch</text>
+          </g>
+          <g transform="translate(0,176)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">EASA AI levels</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the autonomy ladder</text>
+          </g>
+          <g transform="translate(0,206)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">MITRE ATLAS / OWASP LLM + ASI</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the guardrail and test catalog</text>
+          </g>
+          <g transform="translate(0,236)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">ASIAS / INPO protections</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">non-punitive incident sharing</text>
+          </g>
+          <g transform="translate(0,266)">
+            <rect x="0" y="0" width="360" height="26" fill="var(--sunken)"/>
+            <text x="12" y="18" fill="currentColor">NIST AI RMF / ISO 42001</text>
+            <line x1="368" y1="13" x2="548" y2="13" stroke="var(--accent)" stroke-width="1" marker-end="url(#arA)"/>
+            <text x="560" y="18" fill="var(--accent-deep)" font-weight="600">the outer vocabulary and audit-facing shell</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Every element is proven in another regulated sector. Not one requires original
+        research — which is what makes 2,000 hours sufficient.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Governance">
+  <div class="shead">
+    <p class="snum">18 <b>Governance</b></p>
+    <h2>One steering committee, four pods, three decisions</h2>
+    <p class="ssub">The Steering Committee is utility-majority and chartered to make three decisions and
+      no others: scope, ratification, and publication. NERC participates in an observer/advisory
+      capacity with that role written down explicitly.</p>
+  </div>
+  <div class="sbody">
+    <table class="t">
+      <thead><tr><th style="width:16%">Pod</th><th style="width:40%">Owns</th><th>Anchor sources to harvest</th></tr></thead>
+      <tbody>
+        <tr><td class="k">A — Tiering &amp; Scope</td>
+          <td>Use-case tiering rubric; scope boundary (what counts as an &ldquo;AI system&rdquo;);
+            consequence / autonomy / context taxonomy</td>
+          <td class="mono">SR 26-2 scope definition · EASA AI levels · OPAI's 250+ use cases</td></tr>
+        <tr><td class="k">B — Evidence &amp; Risk File</td>
+          <td>Risk File template, provider and deployer sides; minimum evidence package; change envelope</td>
+          <td class="mono">UL 4600 · ISO/IEC 42005 · FDA PCCP + GMLP</td></tr>
+        <tr><td class="k">C — Test &amp; Guardrails</td>
+          <td>TEVV protocols by tier; guardrail catalog; Operating Envelope definition</td>
+          <td class="mono">ATLAS · OWASP LLM Top 10 + ASI · IEC 62443 · LOPA · L2RPN</td></tr>
+        <tr><td class="k">D — Operate &amp; Learn</td>
+          <td>Monitoring triggers; incident taxonomy; runbooks; <strong>data-sharing legal
+            protections</strong></td>
+          <td class="mono">ASIAS · INPO / EPIX · NERC CIP incident reporting</td></tr>
+      </tbody>
+    </table>
+    <div class="grid g2">
+      <div class="call"><strong>Pod D starts first, and starts on legal.</strong> The non-punitive
+        sharing agreement has the longest lead time and gates the initiative's long-term value.</div>
+      <div class="call plain">Pods are ~6 organizations each — small enough to decide, large enough to
+        be representative. Weekly async, biweekly 90-minute working session, a named utility lead plus
+        an EPRI facilitator.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="The 80 hours">
+  <div class="shead">
+    <p class="snum">19 <b>Member time</b></p>
+    <h2>Publish the allocation at kickoff, or it never materializes</h2>
+    <p class="ssub">The common failure is that members send whoever is free to whichever meeting, and no
+      artifact is ever produced. A published allocation is the countermeasure.</p>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <table class="t">
+        <thead><tr><th style="width:48%">Activity</th><th style="width:12%">Hours</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Contribute 2 real in-flight use cases + draft risk files</td><td class="num">16</td>
+            <td><strong>The core contribution.</strong> Real systems, real evidence gaps, real vendors.</td></tr>
+          <tr><td class="k">Pod working sessions (6 × 90 min + prep)</td><td class="num">20</td>
+            <td>Where reconciliation happens.</td></tr>
+          <tr><td class="k">Red-team another member's risk files</td><td class="num">16</td>
+            <td><strong>The highest-value hour in the program.</strong></td></tr>
+          <tr><td class="k">Internal socialization — CISO, risk, ops leadership</td><td class="num">12</td>
+            <td>Non-optional. A framework nobody inside the utility has seen will not be used.</td></tr>
+          <tr><td class="k">Steering / plenary / review</td><td class="num">8</td><td></td></tr>
+          <tr><td class="k">Reserve</td><td class="num">8</td><td></td></tr>
+          <tr><td class="k">Total</td><td class="num"><strong>80</strong></td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="stack">
+        <div class="stat"><span class="n acc">32 / 80</span>
+          <span class="u">hours produce or stress-test concrete artifacts</span></div>
+        <div class="stat"><span class="n">20 / 80</span>
+          <span class="u">hours are spent in meetings</span></div>
+        <div class="call amb"><strong>Invert that ratio and the initiative fails.</strong> Report
+          per-member artifact completion, not attendance.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Cadence">
+  <div class="shead">
+    <p class="snum">20 <b>Cadence</b></p>
+    <h2>26 weeks to a ratified MVP — 16–18 with the fleet</h2>
+  </div>
+  <div class="sbody">
+    <table class="t">
+      <thead><tr><th style="width:10%">Weeks</th><th style="width:10%">With fleet</th><th style="width:20%">Phase</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1–2</td><td class="num" style="color:var(--accent)">1</td><td class="k">Charter &amp; harvest</td>
+          <td>Pods formed. Scope boundary drafted. Source pack distributed.
+            <strong>Legal work on data-sharing protections begins.</strong></td></tr>
+        <tr><td class="num">3–6</td><td class="num" style="color:var(--accent)">2–4</td><td class="k">Draft v0.1 from harvested parts</td>
+          <td>Tiering rubric v0.1 and Risk File template v0.1. Explicitly a mash-up, explicitly rough.</td></tr>
+        <tr><td class="num">7–12</td><td class="num" style="color:var(--accent)">5–10</td><td class="k">Apply to real systems</td>
+          <td>Every member completes files for 2 real use cases. Target ~50 files — <strong>~150 with the
+            fleet.</strong> The initiative's central asset.</td></tr>
+        <tr><td class="num">13–16</td><td class="num" style="color:var(--accent)">11–13</td><td class="k">Calibrate</td>
+          <td>Inter-rater reliability on tiering; reconcile disagreements. <strong>Protect this phase
+            from schedule pressure</strong> — it is where the sector-specific judgment gets made.</td></tr>
+        <tr><td class="num">17–20</td><td class="num" style="color:var(--accent)">12–15</td><td class="k">Red-team</td>
+          <td>Cross-member review. Each member attacks another's files.</td></tr>
+        <tr><td class="num">21–24</td><td class="num" style="color:var(--accent)">14–16</td><td class="k">v1.0 + tooling</td>
+          <td>Ratify. Publish rubric and template. Release the assessment tool as open source.</td></tr>
+        <tr><td class="num">25–26</td><td class="num" style="color:var(--accent)">17–18</td><td class="k">Land it</td>
+          <td>Executive briefing pack; per-member adoption plan; vendor-facing one-pager.</td></tr>
+      </tbody>
+    </table>
+    <div class="call"><strong>Hard gate at week 12:</strong> 50 files, or the schedule stops and the pod
+      structure is rebuilt. The failure mode this catches — becoming a document review committee — is
+      the most common way consortia of this shape end.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Adversarial evidence review">
+  <div class="shead">
+    <p class="snum">21 <b>The mechanism</b></p>
+    <h2>If one practice is imported from this work, make it this one</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <div class="card tint">
+          <p class="lbl acc">Weeks 17–20 · each member is assigned another member's files</p>
+          <p class="ct" style="font-size:1.9cqw; line-height:1.28">&ldquo;Would you deploy this system
+            in your territory on this evidence? If not, what is missing?&rdquo;</p>
+        </div>
+        <ul class="li">
+          <li>It converts vague standard-writing into a concrete, answerable decision. <strong>People
+            argue endlessly about principles and decide quickly about artifacts.</strong></li>
+          <li>It surfaces the real acceptance thresholds, which are tacit and never survive being asked
+            for in the abstract.</li>
+          <li>It builds the peer-review muscle INPO proved is the durable mechanism in a safety-critical
+            industry.</li>
+          <li>It produces the calibration data that turns a rubric into a standard.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="call amb"><strong>Where two utilities disagree about whether the evidence is
+          sufficient, that is the finding.</strong> Those disagreements are the sector's actual open
+          questions, and enumerating them is more valuable than any amount of smooth consensus prose.</div>
+        <div class="card sunk">
+          <p class="lbl">Seen in Part III</p>
+          <p class="cb">VMS-1 produced a three-way split on tier between the nominating member and two
+            reviewers. Under the old model that gets smoothed into consensus language in a working
+            session. Here it exposed a real hole — <strong>the rubric never distinguished documented
+            oversight from achievable oversight</strong> — and became a framework change for all 25
+            members.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Failure modes">
+  <div class="shead">
+    <p class="snum">22 <b>Risk</b></p>
+    <h2>Seven ways this fails, and what stops each</h2>
+  </div>
+  <div class="sbody">
+    <table class="t">
+      <thead><tr><th style="width:24%">Failure mode</th><th style="width:32%">Signal</th><th>Countermeasure</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Becomes a document review committee</td><td>Meetings spent on wording; no completed risk files by week 12</td>
+          <td>Hard gate at week 12: 50 files or the schedule stops and the pod structure is rebuilt</td></tr>
+        <tr><td class="k">Vendor capture</td><td>Evidence requirements soften toward what current products can supply</td>
+          <td>Utility-only vote on ratification; publish minority positions</td></tr>
+        <tr><td class="k">Regulatory chill</td><td>Members won't discuss real incidents with NERC present</td>
+          <td>Legal protections drafted in month one; written observer role; members-only channel</td></tr>
+        <tr><td class="k">Boiling the ocean</td><td>Scope expands to all AI everywhere in the utility</td>
+          <td>SR 26-2-style hard scope exclusions in week 2; MVP covers material use cases only</td></tr>
+        <tr><td class="k">Framework goes stale</td><td>v1.0 published, nothing changes for 18 months</td>
+          <td>A PCCP-style change envelope <em class="q">for the framework itself</em></td></tr>
+        <tr><td class="k">Confusion with the data-center load debate</td><td>Executives disengage: &ldquo;we already have a team on AI and the grid&rdquo;</td>
+          <td>Open every briefing with the AI-as-load / AI-as-tool distinction</td></tr>
+        <tr><td class="k">The 80 hours never materialize</td><td>Members attend but don't produce</td>
+          <td>Publish the allocation at kickoff; report artifact completion, not attendance</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="slide dense" data-part="Framework &amp; strategy" data-title="MVP contents">
+  <div class="shead">
+    <p class="snum">23 <b>MVP contents</b></p>
+    <h2>One page of scope, two pages of rubric, eleven fields</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <div class="card sunk"><p class="lbl">1 · Scope boundary — 1 page</p>
+          <p class="cb">Follow SR 26-2: exclude deterministic rules, ordinary software, simple
+            analytics. <strong>Being explicit about what is out is what keeps the framework
+            usable.</strong></p></div>
+        <div class="card sunk"><p class="lbl">2 · Tiering rubric — 2 pages · four dimensions</p>
+          <ul class="li tight" style="margin-top:.3cqw">
+            <li><strong>Consequence</strong> — customer inconvenience → equipment damage → safety →
+              reliability event</li>
+            <li><strong>Autonomy</strong> — advisory → human-in-the-loop → human-on-the-loop →
+              autonomous-with-envelope</li>
+            <li><strong>Operating context</strong> — IT / OT / customer-facing / market-facing;
+              reversibility of the action</li>
+            <li><strong>Exposure</strong> — how many customers, assets or decisions are touched</li>
+          </ul>
+          <p class="cb">Producing Tier 1–4 — the tier sets evidence depth, validation independence and
+            monitoring intensity.</p></div>
+        <div class="card sunk"><p class="lbl">4 · Two worked examples</p>
+          <p class="cb">One high tier, one low. <strong>Worked examples are what people copy; the
+            template is what they cite.</strong></p></div>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">3 · AI System Risk File — the eleven fields</p>
+        <table class="t">
+          <thead><tr><th style="width:46%">Field</th><th>Source of the pattern</th></tr></thead>
+          <tbody>
+            <tr><td class="k">Purpose and intended use</td><td class="mono">ISO/IEC 42005</td></tr>
+            <tr><td class="k" style="color:var(--accent-deep)">Operating Envelope</td><td class="mono">ODD — the field most likely to be missing today</td></tr>
+            <tr><td class="k">Data provenance and representativeness</td><td class="mono">SR 26-2</td></tr>
+            <tr><td class="k">Capabilities and limitations</td><td class="mono">GMLP</td></tr>
+            <tr><td class="k">Human oversight model</td><td class="mono">EASA AI levels</td></tr>
+            <tr><td class="k">TEVV performed</td><td class="mono">ARP6983 / AI RMF MEASURE</td></tr>
+            <tr><td class="k">Deployment conditions and guardrails</td><td class="mono">IEC 62443 · LOPA</td></tr>
+            <tr><td class="k">Monitoring plan and triggers</td><td class="mono">GMLP</td></tr>
+            <tr><td class="k" style="color:var(--accent-deep)">Change envelope</td><td class="mono">FDA PCCP — determines whether this survives reality</td></tr>
+            <tr><td class="k">Incident history and reporting path</td><td class="mono">ASIAS / NERC CIP</td></tr>
+            <tr><td class="k">Reassessment triggers</td><td class="mono">ISO/IEC 5338</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Acceptance criteria">
+  <div class="shead">
+    <p class="snum">24 <b>Done means done</b></p>
+    <h2>The MVP is finished when it passes these, not when it looks finished</h2>
+  </div>
+  <div class="sbody">
+    <div class="grid g3">
+      <div class="card"><p class="lbl acc">Corpus</p><p class="ct">≥ 50 completed risk files</p>
+        <p class="cb">across ≥ 20 member organizations</p></div>
+      <div class="card"><p class="lbl acc">Inter-rater reliability</p><p class="ct">≥ 80% agreement</p>
+        <p class="cb">two independent utilities tier the same use case identically</p></div>
+      <div class="card"><p class="lbl acc">Usability</p><p class="ct">&lt; 4 hours</p>
+        <p class="cb">for a practitioner to complete a Tier 2 file using existing documentation</p></div>
+      <div class="card"><p class="lbl acc">Real-world use</p><p class="ct">≥ 5 members</p>
+        <p class="cb">report using it in an actual procurement or deployment decision</p></div>
+      <div class="card warn"><p class="lbl amb">Vendor viability</p><p class="ct">≥ 3 technology members</p>
+        <p class="cb">confirm they can produce the provider-side package for a real product</p></div>
+      <div class="card"><p class="lbl acc">Coverage</p><p class="ct">≥ 90% of the OPAI corpus</p>
+        <p class="cb">rubric produces a defensible tier across the 250+ use cases</p></div>
+    </div>
+    <div class="call amb"><strong>Vendor viability is the criterion most likely to be skipped and most
+      likely to matter.</strong> An evidence package no vendor can produce is not a standard. It is a
+      wish.</div>
+  </div>
+</section>
+
+<section class="slide dense" data-part="Framework &amp; strategy" data-title="The agent fleet">
+  <div class="shead">
+    <p class="snum">25 <b>The fleet</b></p>
+    <h2>Eight agents, each scoped narrowly enough to be assured</h2>
+  </div>
+  <div class="sbody">
+    <table class="t">
+      <thead><tr><th style="width:13%">Agent</th><th style="width:29%">What it does</th><th style="width:36%">Binding guardrail</th><th>Human ratifier</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Harvester</td><td>Ingests the source corpus; emits clause-level extracts with source locators</td>
+          <td>Every claim carries a verifiable citation. Retrieval-grounded only</td><td class="mono">Pod lead</td></tr>
+        <tr><td class="k">Crosswalk</td><td>Maintains the SAFERai ↔ NIST ↔ ISO ↔ 62443 ↔ CIP ↔ EU AI Act matrix</td>
+          <td>Proposes mappings; cannot publish one. Low-confidence flagged</td><td class="mono">Pod A + Steering</td></tr>
+        <tr><td class="k">Tiering Copilot</td><td>Proposes a tier with reasoning against the rubric</td>
+          <td><strong>Produces the second opinion, never the first</strong></td><td class="mono">Contributing member</td></tr>
+        <tr><td class="k">Risk File Drafter</td><td>Pre-fills the risk file from docs the member already has</td>
+          <td><strong>Gaps marked as gaps, never inferred. No field populated without a source</strong></td><td class="mono">Contributing member</td></tr>
+        <tr><td class="k">Red-Team</td><td>Attacks completed files: missing evidence, unsupported claims, guardrails that are theatre</td>
+          <td>Runs <em class="q">before</em> human red-team, never instead of it</td><td class="mono">Reviewing member</td></tr>
+        <tr><td class="k">Conformance Checker</td><td>Checks a vendor package against the spec; returns a gap list</td>
+          <td>Advisory only — cannot pass or fail a vendor</td><td class="mono">Pod B</td></tr>
+        <tr><td class="k">Horizon Scanner</td><td>Watches ATLAS/OWASP, NIST, FERC/NERC dockets, EU omnibus, adjacent-sector incidents</td>
+          <td>Proposes change-envelope actions; cannot trigger one</td><td class="mono">Steering</td></tr>
+        <tr><td class="k">Reconciliation</td><td>Clusters member positions; separates substantive from terminological disagreement</td>
+          <td><strong>Must surface dissent, never resolve it. Minority positions preserved verbatim</strong></td><td class="mono">Pod lead</td></tr>
+      </tbody>
+    </table>
+    <div class="grid g2">
+      <div class="call"><strong>The Drafter drives participation up</strong> — four hours of writing from
+        a blank template becomes forty-five minutes of correcting a draft.</div>
+      <div class="call"><strong>The Crosswalk handles what goes stale fastest</strong> — a living
+        mapping rather than a PDF nobody trusts after year one.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Fleet failure modes">
+  <div class="shead">
+    <p class="snum">26 <b>Fleet risk</b></p>
+    <h2>Three ways the fleet goes wrong — one of them is invisible</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <div class="card warn">
+          <p class="lbl amb">1 · Convergence collapse — the serious one</p>
+          <p class="cb">If all 25 members use the same model to draft their risk files, the outputs
+            correlate. The headline acceptance criterion — <em class="q">two independent utilities tier
+            the same use case identically ≥ 80% of the time</em> — then measures
+            <strong>model agreement, not sector consensus</strong>, and the number looks excellent
+            while meaning nothing. It is subtle, easy to miss, and would quietly invalidate the group's
+            central calibration metric.</p>
+        </div>
+        <div class="grid g2">
+          <div class="card sunk"><p class="lbl amb">2 · Citation laundering</p>
+            <p class="cb">Plausible-sounding references to clauses that do not exist — severe here
+              because the group's product <em class="q">is</em> standards mappings, and a fabricated
+              clause could propagate into a utility's compliance argument.</p></div>
+          <div class="card sunk"><p class="lbl amb">3 · Agent-generated consensus</p>
+            <p class="cb">An agent asked to summarize member positions will smooth them into agreement,
+              because that is what summarization does — destroying the most valuable output of the
+              program.</p></div>
+        </div>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">Countermeasures — all cheap, all week-two decisions</p>
+        <ul class="li">
+          <li>Tag every risk file with provenance: manual, agent-assisted, agent-drafted.</li>
+          <li>Compute inter-rater reliability <strong>within and across provenance classes
+            separately</strong>, and report all three numbers. Divergence is the diagnostic.</li>
+          <li>Require the Tiering Copilot to produce the second opinion only.</li>
+          <li>Deliberately run a <strong>mixed-model fleet</strong> across pods rather than
+            standardizing on one.</li>
+          <li>Hold back a manual-only control set of ~10 use cases as ground truth.</li>
+          <li>Source locators mandatory, spot-audited by the red team; low-confidence mappings blocked
+            from publication.</li>
+        </ul>
+        <div class="call"><strong>Model neutrality is non-negotiable.</strong> Microsoft and NVIDIA are
+          founding members. If the fleet couples to one vendor's models, the framework's neutrality is
+          compromised and the mixed-model countermeasure becomes unavailable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="The continuous consortium">
+  <div class="shead">
+    <p class="snum">27 <b>Operating model</b></p>
+    <h2>The unit of work stops being the meeting</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <table class="t">
+        <thead><tr><th style="width:30%"></th><th style="width:33%">Traditional consortium</th><th>Continuous consortium</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Unit of work</td><td>The meeting</td><td style="color:var(--accent-deep)"><strong>The artifact</strong></td></tr>
+          <tr><td class="k">Cadence</td><td>Quarterly document releases</td><td style="color:var(--accent-deep)">Continuously updated living repository</td></tr>
+          <tr><td class="k">What a session is for</td><td>Drafting, discussing, aligning</td><td style="color:var(--accent-deep)"><strong>Deciding</strong> — agents prepare the packet in advance</td></tr>
+          <tr><td class="k">Participation floor</td><td>Full 80 hours or you cannot keep up</td><td style="color:var(--accent-deep)">~20 hours still produces real contribution</td></tr>
+          <tr><td class="k">Progress visibility</td><td>Status decks</td><td style="color:var(--accent-deep)">Live dashboard: files, gaps, open disagreements</td></tr>
+          <tr><td class="k">Contribution shape</td><td>Attendance</td><td style="color:var(--accent-deep)">Ratified artifacts</td></tr>
+          <tr><td class="k">Drafting cycle</td><td>6 weeks</td><td style="color:var(--accent-deep)">~1 week</td></tr>
+        </tbody>
+      </table>
+      <div class="stack">
+        <div class="card tint"><p class="ct">Decision packets, not agendas</p>
+          <p class="cb">Agents assemble the options, the evidence, the crosswalk implications, and an
+            explicit map of where members currently disagree. <strong>Members arrive to decide, not to
+            discover.</strong></p></div>
+        <div class="card tint"><p class="ct">A standing artifact, not a standing meeting</p>
+          <p class="cb">The framework lives as a versioned repository with open issues — which suits a
+            three-hour-per-week contribution pattern far better than synchronous convening.</p></div>
+        <div class="card tint"><p class="ct">A workbench, not a workload</p>
+          <p class="cb"><strong>Raise the corpus target from 50 files to 150</strong>: same human hours,
+            three times the calibration data.</p></div>
+        <div class="call amb"><strong>One deployment constraint governs all of it.</strong> Members
+          cannot send OT documentation to a shared multi-tenant service. The fleet must run
+          <strong>inside the member's own tenant</strong> — containerized, model-agnostic, no data
+          egress by default. An architectural requirement from week one, not a retrofit.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="After the MVP">
+  <div class="shead">
+    <p class="snum">28 <b>Roadmap</b></p>
+    <h2>Four releases, each gated on adoption of the prior one</h2>
+    <p class="ssub">Gated on adoption, not on elapsed time.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g4">
+      <div class="card"><p class="lbl acc">Release 2 · ~6 months</p><p class="ct">Test &amp; Guardrail</p>
+        <ul class="li tight" style="margin-top:.4cqw">
+          <li>Tiered TEVV protocols with acceptance criteria, run in the OPAI Sandbox</li>
+          <li>Guardrail catalog as LOPA-style independent protection layers</li>
+          <li><strong>Autonomy ladder v1.0</strong> — the deliverable that matters most in 2027</li>
+          <li>Reference architectures for the 3–5 highest-value OPAI use cases</li>
+        </ul></div>
+      <div class="card"><p class="lbl acc">Release 3 · ~12 months</p><p class="ct">Registry &amp; Toolkit</p>
+        <ul class="li tight" style="margin-top:.4cqw">
+          <li>AI System Registry schema and prototype — federated, anonymized aggregates only</li>
+          <li>Open-source assessment tool with ITSM and procurement hooks —
+            <strong>adoption dies at manual data entry</strong></li>
+          <li>Vendor evidence conformance profile: build once, satisfy all 25</li>
+        </ul></div>
+      <div class="card"><p class="lbl acc">Release 4 · ~18 months</p><p class="ct">Operate &amp; Learn</p>
+        <ul class="li tight" style="margin-top:.4cqw">
+          <li>Monitoring runbooks and drift triggers by tier</li>
+          <li>AI incident taxonomy — prerequisite for everything else</li>
+          <li><strong>Non-punitive incident exchange</strong> — highest long-term value, longest lead time</li>
+          <li>Anonymized sector performance indicators, the EPIX pattern</li>
+        </ul></div>
+      <div class="card"><p class="lbl acc">Release 5 · ~24 months</p><p class="ct">Stewardship</p>
+        <ul class="li tight" style="margin-top:.4cqw">
+          <li>Transition from project to enduring stewardship</li>
+          <li>Formal versioning, deprecation policy, conformance assessment</li>
+          <li>Paths to external recognition: ISO 42001 mapping, NERC recognition, EU Annex III alignment</li>
+        </ul></div>
+    </div>
+    <div class="call"><strong>Publish; let third parties certify.</strong> A member consortium that
+      certifies its own members has a credibility problem no amount of process discipline fixes.</div>
+  </div>
+</section>
+
+<section class="slide dense" data-part="Framework &amp; strategy" data-title="Staying ahead — four mechanisms">
+  <div class="shead">
+    <p class="snum">29 <b>Durability</b></p>
+    <h2>A framework written against 2026 systems misleads against 2028 systems</h2>
+    <p class="ssub">The hard problem is not writing v1.0. It is that AI capability moves faster than any
+      standards process. Four mechanisms, then the one that matters most.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g4">
+      <div class="card sunk"><p class="lbl acc">1</p><p class="ct">A change envelope for the framework itself</p>
+        <p class="cb">Apply PCCP logic reflexively. Editorial updates need no ratification; thresholds
+          and evidence fields get a 30-day pod review; tier definitions, scope boundary and autonomy
+          ladder need full ratification. Plus predefined triggers that force reassessment regardless of
+          schedule.</p>
+        <p class="cb"><strong>Without this, v1.0 sits untouched for two years and is then replaced
+          wholesale. Nearly every industry framework fails this way.</strong></p></div>
+      <div class="card sunk"><p class="lbl acc">2</p><p class="ct">Capability-triggered review</p>
+        <p class="cb">&ldquo;We revisit annually&rdquo; is the wrong trigger — capability does not
+          arrive annually. Define thresholds that automatically force re-tiering:</p>
+        <ul class="li tight" style="margin-top:.2cqw">
+          <li>A model class gains a materially new capability in OT contexts</li>
+          <li>A deployed system's autonomy level increases</li>
+          <li>A new modality enters the operating environment</li>
+          <li>A vendor's foundation model changes materially</li>
+          <li>A sector incident reveals a failure mode outside the taxonomy</li>
+        </ul>
+        <p class="cb">Each trigger names an owner and a clock.</p></div>
+      <div class="card sunk"><p class="lbl acc">3</p><p class="ct">A standing red team</p>
+        <p class="cb">2–3 people, refreshed quarterly across members, whose standing job is to break the
+          framework rather than the systems: find use cases the rubric tiers absurdly, evidence packages
+          that pass while the system is obviously unsafe, guardrails that are theatre.</p>
+        <p class="cb"><strong>Findings published inside the consortium as first-class artifacts.</strong>
+          A framework with a documented list of its own weaknesses is far more trustworthy than one
+          claiming completeness.</p></div>
+      <div class="card sunk"><p class="lbl acc">4</p><p class="ct">Horizon scanning on existing rails</p>
+        <p class="cb">EPRI already runs a Technology Radar and Pulse Report. Do not build a parallel one
+          — attach an AI-assurance lens, with a standing quarterly item into Steering covering model
+          capability, regulatory movement, cross-sector standards progress and adjacent-sector
+          incidents.</p>
+        <p class="cb"><strong>Adjacent-sector incidents are the cheapest possible learning.</strong>
+          Aviation, medical and financial AI failures are public, well-investigated and structurally
+          similar. Reading someone else's accident report costs an hour.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Framework &amp; strategy" data-title="Guardrails over standards">
+  <div class="shead">
+    <p class="snum">30 <b>Durability · the deepest point</b></p>
+    <h2>Guardrails scale better than pre-deployment standards</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="lede">In a fast-moving field, runtime guardrails scale better than pre-deployment
+          standards.</p>
+        <p class="p">Pre-deployment assurance assumes you can characterize the system before it
+          operates. That assumption weakens every year as systems become more general and more agentic.
+          Runtime guardrails — bounded permissions, output validation, human confirmation gates, circuit
+          breakers, rate limits, IEC 62443 zone containment — do not depend on predicting behavior.
+          <strong>They constrain consequences regardless of behavior.</strong></p>
+        <div class="call"><strong>Guardrails cost very little speed.</strong> Bounded agents constrained
+          by validation and optional human approval have been measured running <strong>13–18× faster
+          than manual operation</strong> — the empirical point to put in front of an operations executive
+          who expects assurance to mean delay.</div>
+      </div>
+      <div class="stack">
+        <figure class="fig">
+          <svg viewBox="0 0 440 176" role="img" aria-label="As tier rises, the framework shifts weight from evidence about the model toward constraints on what the system may do.">
+            <text x="0" y="14" font-family="ui-monospace, monospace" font-size="10.5" letter-spacing="1.3" fill="var(--ink-soft)">AS TIER RISES, WEIGHT SHIFTS</text>
+            <text x="0" y="46" font-size="12.5" fill="currentColor">Evidence about the model</text>
+            <rect x="0" y="54" width="440" height="20" fill="var(--lvl-track)"/>
+            <rect x="0" y="54" width="330" height="20" fill="var(--rule)"/>
+            <rect x="0" y="54" width="110" height="20" fill="var(--ink-soft)"/>
+            <text x="0" y="108" font-size="12.5" fill="currentColor">Constraints on what it may do</text>
+            <rect x="0" y="116" width="440" height="20" fill="var(--lvl-track)"/>
+            <rect x="0" y="116" width="440" height="20" fill="var(--accent-soft)"/>
+            <rect x="0" y="116" width="330" height="20" fill="var(--accent)"/>
+            <g font-family="ui-monospace, monospace" font-size="10" fill="var(--ink-soft)" text-anchor="middle">
+              <text x="55" y="156">TIER 1</text><text x="165" y="156">TIER 2</text>
+              <text x="275" y="156">TIER 3</text><text x="385" y="156">TIER 4</text>
+            </g>
+          </svg>
+          <figcaption>Practical implication for the rubric: the higher the tier, the more the file is
+            about containment rather than validation.</figcaption>
+        </figure>
+        <div class="card tint"><p class="lbl acc">The Tier 4 question</p>
+          <p class="ct" style="font-size:1.55cqw; line-height:1.3">Not &ldquo;how well was this model
+            validated?&rdquo; but <em class="q">&ldquo;what is the worst thing this system can do before
+            a human stops it, and is that acceptable?&rdquo;</em></p>
+          <p class="cb">Answerable today, stays answerable as capability grows, and is exactly the
+            question a utility operations leader already knows how to reason about.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide dense" data-part="Framework &amp; strategy" data-title="Open questions">
+  <div class="shead">
+    <p class="snum">31 <b>To close with EPRI</b></p>
+    <h2>Eleven verification items, several load-bearing</h2>
+    <p class="ssub">Direct retrieval of epri.com and the SAFERai microsite was blocked by network policy
+      during research, so EPRI-specific detail rests on search extraction rather than the pages
+      themselves. Treat governance, phase dates and any fee schedule as medium confidence.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g3">
+      <div class="stack">
+        <div class="card sunk"><p class="lbl amb">Load-bearing</p><p class="ct">Data-sharing protections</p>
+          <p class="cb">Has legal work begun on non-punitive incident sharing? Longest-lead item, most
+            likely to be underestimated.</p></div>
+        <div class="card sunk"><p class="lbl amb">Load-bearing</p><p class="ct">Scope on agentic systems</p>
+          <p class="cb">In scope for v1.0 or deferred? Given SR 26-2 deferred them, the most consequential
+            scope decision the group will make — and the biggest opportunity.</p></div>
+        <div class="card sunk"><p class="lbl amb">Load-bearing</p><p class="ct">In-tenant deployment</p>
+          <p class="cb">Can the fleet be packaged to run inside each member? This gates whether members
+            can use it on real OT documentation at all.</p></div>
+      </div>
+      <div class="stack">
+        <div class="card"><p class="ct">Roadmap dates</p><p class="cb">Actual phase boundaries — confirm
+          or re-baseline the 26-week plan.</p></div>
+        <div class="card"><p class="ct">Governance</p><p class="cb">Is the structure already defined? Is
+          there a utility-only decision forum, and is NERC's role documented?</p></div>
+        <div class="card"><p class="ct">Membership</p><p class="cb">Is the founding cohort closed? Cost
+          beyond SME time, and what exactly does SDF cover?</p></div>
+        <div class="card"><p class="ct">IP and licensing</p><p class="cb">Which open-source license? Who
+          owns contributed risk files, and how are they anonymized?</p></div>
+      </div>
+      <div class="stack">
+        <div class="card"><p class="ct">OPAI interface</p><p class="cb">Do SAFERai deliverables gate OPAI
+          use-case development? Is passing a risk file a precondition for sandbox promotion?</p></div>
+        <div class="card"><p class="ct">Regulatory intent</p><p class="cb">To inform future NERC
+          standards, or to remain voluntary? Changes how carefully language must be drafted.</p></div>
+        <div class="card"><p class="ct">International</p><p class="cb">How does the Eurelectric/EPRI
+          collaboration interact, particularly for EU AI Act Annex III alignment?</p></div>
+        <div class="card"><p class="ct">Agent fleet</p><p class="cb">Is EPRI already building tooling?
+          Does fleet development qualify for SDF? Can compute be accepted in-kind?</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ PART III — WORKED EXAMPLE ══════════════════ -->
+
+<section class="slide divider" data-part="Worked example" data-title="Part III — divider">
+  <p class="pn">Part III</p>
+  <h2>One use case, end to end</h2>
+  <p class="pd">A vegetation-management AI system through intake, agent pre-fill, tiering, gap-closing,
+    red team and ratification — the artifacts produced at each step, and the finding that changed the
+    framework for everyone else.</p>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="The system — VMS-1">
+  <div class="shead">
+    <p class="snum">32 <b>The system</b></p>
+    <h2>VMS-1 · vegetation encroachment detection</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="p">A Western investor-owned utility, ~1.2M customers, wildfire-prone service
+          territory. Each year it flies <strong>12,400 circuit miles</strong> of distribution line with
+          aerial LiDAR and oblique imagery. A third-party computer-vision model estimates
+          conductor-to-vegetation clearance, classifies span risk, and <strong>writes prioritized work
+          orders directly into the work management system.</strong> A vegetation planner reviews the
+          resulting queue; field crews execute the trims. Roughly <strong>180,000 spans</strong> are
+          assessed per year.</p>
+        <div class="call"><strong>It is a good example precisely because the tier is not obvious.</strong>
+          The model never operates equipment — a human crew does the cutting. But a span it fails to
+          flag is a span nobody looks at.</div>
+        <div class="call plain"><strong>Illustrative composite.</strong> VMS-1 is a hypothetical system
+          at a hypothetical member utility, built from patterns common to vegetation-management AI
+          programs. It is not a description of any real utility's system, vendor or performance. The
+          point is the shape of the process and the form of the outputs.</div>
+      </div>
+      <div class="stack">
+        <div class="stat"><span class="n acc">12,400</span><span class="u">circuit miles flown annually</span></div>
+        <div class="stat"><span class="n acc">180,000</span><span class="u">spans assessed per year</span></div>
+        <div class="stat"><span class="n">3 hrs 30</span><span class="u">total member time across all eight stages</span></div>
+        <div class="stat"><span class="n">5 days</span><span class="u">elapsed, plus cross-member review in week 12</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="The eight stages">
+  <div class="shead">
+    <p class="snum">33 <b>The path</b></p>
+    <h2>Eight stages, four of them unattended</h2>
+  </div>
+  <div class="sbody">
+    <div class="pipe">
+      <div class="st"><span class="n">00</span><span class="t">Intake</span><span class="a">Member · 10m</span></div>
+      <div class="st ag"><span class="n">01</span><span class="t">Agent pre-fill</span><span class="a">Agent · 2h</span></div>
+      <div class="st"><span class="n">02</span><span class="t">Human tiering</span><span class="a">Member · 40m</span></div>
+      <div class="st ag"><span class="n">03</span><span class="t">Copilot 2nd opinion</span><span class="a">Agent · 4m</span></div>
+      <div class="st"><span class="n">04</span><span class="t">Close the gaps</span><span class="a">Member · 75m</span></div>
+      <div class="st ag"><span class="n">05</span><span class="t">Agent red team</span><span class="a">Agent · 20m</span></div>
+      <div class="st"><span class="n">06</span><span class="t">Cross-member review</span><span class="a">Peer · 60m</span></div>
+      <div class="st"><span class="n">07</span><span class="t">Ratify &amp; publish</span><span class="a">Pod · 15m</span></div>
+    </div>
+    <div class="split">
+      <div class="stack">
+        <p class="lbl acc">Stage 00 · Intake · member · 10 minutes</p>
+        <p class="p">Intake is deliberately trivial — three sentences and pointers to documents that
+          already exist. <strong>Anything heavier and members nominate their easiest system instead of
+          their most interesting one.</strong></p>
+        <div class="card sunk">
+          <p class="lbl">INTAKE-2026-0143 · VMS-1 nomination</p>
+          <table class="t" style="margin-top:.4cqw">
+            <tbody>
+              <tr><td class="k" style="width:34%">What it does</td><td>Detects vegetation encroachment on
+                distribution conductors from annual aerial LiDAR + imagery; generates and prioritizes
+                trim work orders in the WMS.</td></tr>
+              <tr><td class="k">Who acts on it</td><td>VM planner reviews the queue; contract crews
+                execute trims.</td></tr>
+              <tr><td class="k">Why nominated</td><td>In production 3 years; nobody has ever assessed it
+                as an AI system.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">Documents available — all of them already existed</p>
+        <div class="chips">
+          <span class="chip">Vendor model card</span>
+          <span class="chip">MSA + SOW</span>
+          <span class="chip">Security questionnaire</span>
+          <span class="chip">WMS integration spec</span>
+          <span class="chip">Ops procedure VM-114</span>
+          <span class="chip">18 months of WMS records</span>
+        </div>
+        <div class="call"><strong>Six sources, no new documentation written.</strong> The Drafter's job
+          is to turn what the utility already has into a structured file — and, more importantly, to
+          say precisely what those six documents do not contain.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 01 — what the agent could source">
+  <div class="shead">
+    <p class="snum">34 <b>Stage 01 · Risk File Drafter · ~2 hrs unattended</b></p>
+    <h2>Seven fields populated, every one with a source</h2>
+    <p class="ssub">The binding guardrail does the real work: <strong>no field is populated without a
+      source, and a gap is marked as a gap rather than inferred.</strong></p>
+  </div>
+  <div class="sbody">
+    <div class="grid g3">
+      <div class="card"><p class="lbl acc">Purpose &amp; intended use</p>
+        <p class="cb">Identify spans where vegetation clearance is below standard; prioritize trim
+          scheduling across 12,400 circuit miles. <span class="chip">SOW §2.1</span></p></div>
+      <div class="card"><p class="lbl acc">Capabilities &amp; limits</p>
+        <p class="cb">Vendor reports aggregate precision 0.91 / recall 0.94 on internal validation set.
+          <span class="chip">model card v3.2</span></p></div>
+      <div class="card"><p class="lbl acc">Data provenance</p>
+        <p class="cb">Trained on vendor's multi-client LiDAR corpus, 2019–2024.
+          <strong>This utility's territory is not represented in the training data.</strong>
+          <span class="chip">model card §4</span></p></div>
+      <div class="card"><p class="lbl acc">Human oversight</p>
+        <p class="cb">Planner reviews generated work-order queue before crew dispatch.
+          <span class="chip">ops procedure VM-114</span></p></div>
+      <div class="card"><p class="lbl acc">Deployment conditions</p>
+        <p class="cb">Batch scoring post-flight; writes to WMS via API; priority field drives crew
+          sequencing. <span class="chip">integration spec</span></p></div>
+      <div class="card"><p class="lbl acc">Guardrails in place</p>
+        <p class="cb">Planner review gate; work orders below priority threshold queue rather than
+          dispatch. <span class="chip">VM-114</span></p></div>
+      <div class="card" style="grid-column: span 3"><p class="lbl acc">Incident history</p>
+        <p class="cb">No AI-attributed incidents logged. <strong>Note appended by the agent: the WMS has
+          no field to attribute an incident to the model.</strong> <span class="chip">WMS records</span></p></div>
+    </div>
+    <div class="call"><strong>Seven sourced fields told the member nothing they did not already
+      know.</strong> The output that matters is the next slide.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 01 — the four gaps">
+  <div class="shead">
+    <p class="snum">35 <b>Stage 01 · the refusals</b></p>
+    <h2>Four fields the agent refused to fill</h2>
+    <p class="ssub">The gaps are the product.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g2">
+      <div class="card warn"><p class="lbl amb">Gap · Operating envelope</p>
+        <p class="cb">No reviewed document defines conditions under which model performance is claimed
+          valid. Vendor reports aggregate metrics only — not stratified by species, terrain slope,
+          canopy density or acquisition season.</p></div>
+      <div class="card warn"><p class="lbl amb">Gap · TEVV performed</p>
+        <p class="cb">Vendor internal validation only. No independent test on this utility's territory.
+          No stratified recall reported.</p></div>
+      <div class="card warn"><p class="lbl amb">Gap · Change envelope</p>
+        <p class="cb">MSA §7.3 permits vendor model updates on 30 days' notice with no revalidation
+          requirement. <strong>Two updates occurred in the last 18 months. No reassessment was
+          performed.</strong></p></div>
+      <div class="card warn"><p class="lbl amb">Gap · Monitoring plan</p>
+        <p class="cb">WMS records work-order completion. <strong>No mechanism observes spans the model
+          did <em class="q">not</em> flag.</strong> False negatives are structurally unobservable.</p></div>
+    </div>
+    <div class="call amb"><strong>That last gap is the whole reason the exercise is worth doing.</strong>
+      The system reports 94% recall and has a clean incident log — and neither number means anything,
+      because nothing in the pipeline can see a miss. This is a textbook SOTIF failure: the system works
+      exactly as designed, and its performance is simply insufficient for conditions nobody
+      characterized.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Why the metrics mean nothing">
+  <div class="shead">
+    <p class="snum">36 <b>The mechanism behind the gap</b></p>
+    <h2>The loop that never closes</h2>
+  </div>
+  <div class="sbody">
+    <figure class="fig">
+      <svg viewBox="0 0 1000 250" role="img" aria-label="Flagged spans generate a work order, are trimmed, and their completion is recorded in the work management system, closing an observation loop. Unflagged spans go nowhere: nobody inspects them, so a miss never returns any signal and the recall figure cannot be confirmed or refuted in production.">
+        <rect x="0" y="96" width="150" height="56" fill="var(--sunken)"/>
+        <text x="75" y="120" text-anchor="middle" font-size="13" fill="currentColor">180,000 spans</text>
+        <text x="75" y="138" text-anchor="middle" font-size="11.5" fill="currentColor">scored by the model</text>
+
+        <line x1="150" y1="124" x2="196" y2="70" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arA)"/>
+        <line x1="150" y1="124" x2="196" y2="188" stroke="var(--amber)" stroke-width="1.5" marker-end="url(#arAm)"/>
+        <text x="256" y="102" text-anchor="middle" font-size="11" fill="var(--accent)">flagged</text>
+        <text x="256" y="150" text-anchor="middle" font-size="11" fill="var(--amber-strong)">not flagged</text>
+
+        <!-- flagged path -->
+        <rect x="200" y="34" width="140" height="50" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="270" y="64" text-anchor="middle" font-size="12.5" fill="var(--accent-deep)">Work order in WMS</text>
+        <line x1="340" y1="59" x2="392" y2="59" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arA)"/>
+        <rect x="396" y="34" width="140" height="50" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="466" y="64" text-anchor="middle" font-size="12.5" fill="var(--accent-deep)">Crew trims the span</text>
+        <line x1="536" y1="59" x2="588" y2="59" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arA)"/>
+        <rect x="592" y="34" width="150" height="50" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+        <text x="667" y="64" text-anchor="middle" font-size="12.5" fill="var(--accent-deep)">Completion recorded</text>
+        <path d="M742,59 C800,59 800,124 742,124" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M742,124 L200,124" fill="none" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arA)"/>
+        <text x="470" y="116" text-anchor="middle" font-size="11" fill="var(--accent)">observation loop closes — true positives are visible</text>
+
+        <!-- unflagged path -->
+        <rect x="200" y="164" width="140" height="50" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="270" y="186" text-anchor="middle" font-size="12.5" fill="var(--amber)">No work order</text>
+        <text x="270" y="203" text-anchor="middle" font-size="11" fill="var(--amber)">no record created</text>
+        <line x1="340" y1="189" x2="392" y2="189" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arAm)"/>
+        <rect x="396" y="164" width="140" height="50" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="466" y="194" text-anchor="middle" font-size="12.5" fill="var(--amber)">Nobody inspects</text>
+        <line x1="536" y1="189" x2="588" y2="189" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arAm)"/>
+        <rect x="592" y="164" width="150" height="50" fill="var(--amber-soft)"/>
+        <text x="667" y="186" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--amber-strong)">A miss returns</text>
+        <text x="667" y="203" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--amber-strong)">no signal at all</text>
+
+        <line x1="760" y1="189" x2="812" y2="189" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="830" y="180" font-size="12" fill="currentColor">…until the</text>
+        <text x="830" y="197" font-size="12" fill="currentColor">consequence is a fire.</text>
+
+        <text x="0" y="240" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--ink-soft)">RECALL 0.94 IS ASSERTED FROM VENDOR VALIDATION — THE DEPLOYED SYSTEM CANNOT CONFIRM OR REFUTE IT</text>
+      </svg>
+      <figcaption>The file's central performance claim has no evidence path in production.</figcaption>
+    </figure>
+    <div class="grid g3">
+      <div class="card sunk"><p class="lbl">What the file claims</p>
+        <p class="cb">Recall 0.94, precision 0.91, and an incident log with no AI-attributed entries in
+          three years of operation.</p></div>
+      <div class="card sunk"><p class="lbl">What can actually be observed</p>
+        <p class="cb">Completions of work orders the model generated. Nothing about spans it stayed
+          silent on — and the WMS has no field to attribute an incident to the model at all.</p></div>
+      <div class="card tint"><p class="lbl acc">What it produced</p>
+        <p class="cb">The new required risk-file field, <strong>observability of failure</strong>, and a
+          quarterly ground-verification sample of 400 unflagged spans.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 02 — human tiering">
+  <div class="shead">
+    <p class="snum">37 <b>Stage 02 · VM planner + risk lead · 40 minutes</b></p>
+    <h2>Two people score four dimensions, before seeing any agent opinion</h2>
+    <p class="ssub">That ordering is a hard rule — it is what keeps the calibration data meaningful.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g4">
+      <div class="card">
+        <p class="lbl">Consequence</p>
+        <p class="ct"><span class="chip l4">4 · Critical</span></p>
+        <div class="meter" data-lvl="4" role="img" aria-label="Level 4 of 4"><i></i><i></i><i></i><i></i></div>
+        <p class="cb">A missed high-risk span contributes to ignition potential in a wildfire-prone
+          territory.</p>
+      </div>
+      <div class="card">
+        <p class="lbl">Autonomy</p>
+        <p class="ct"><span class="chip l3">3 · Elevated</span></p>
+        <div class="meter" data-lvl="3" role="img" aria-label="Level 3 of 4"><i></i><i></i><i></i><i></i></div>
+        <p class="cb">Writes work orders without human authoring. A planner reviews the queue before
+          dispatch.</p>
+      </div>
+      <div class="card">
+        <p class="lbl">Operating context</p>
+        <p class="ct"><span class="chip l3">3 · Elevated</span></p>
+        <div class="meter" data-lvl="3" role="img" aria-label="Level 3 of 4"><i></i><i></i><i></i><i></i></div>
+        <p class="cb">IT system, but output drives physical field work in a hazard environment. Errors of
+          omission are not observable until failure.</p>
+      </div>
+      <div class="card">
+        <p class="lbl">Exposure</p>
+        <p class="ct"><span class="chip l4">4 · Critical</span></p>
+        <div class="meter" data-lvl="4" role="img" aria-label="Level 4 of 4"><i></i><i></i><i></i><i></i></div>
+        <p class="cb">180,000 spans per year across the entire service territory.</p>
+      </div>
+    </div>
+    <div class="call"><strong>The member's composite call: TIER 3</strong> — reasoning that a qualified
+      planner reviews every work order before any crew is dispatched, which caps effective autonomy.</div>
+    <p class="p">Level is encoded three ways — fill count, ramp step, and the written label — so the
+      score never depends on colour alone.</p>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 03 — the copilot dispute">
+  <div class="shead">
+    <p class="snum">38 <b>Stage 03 · Tiering Copilot · 4 minutes</b></p>
+    <h2>Now, and only now, the agent runs</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <div class="card sunk"><p class="lbl">COPILOT-0143 · second opinion ·
+          <span class="chip amb">PROPOSES TIER 4</span></p>
+          <table class="t" style="margin-top:.4cqw">
+            <tbody>
+              <tr><td class="k" style="width:22%">Agreement</td><td>Consequence 4, Operating context 3,
+                Exposure 4 — concur with member scoring.</td></tr>
+              <tr><td class="k">Dispute</td><td><strong>Autonomy: proposes 4, not 3.</strong> The
+                oversight claim rests on planner review of every work order. At 180,000 spans per year
+                against a single planner FTE, sustained review throughput is approximately
+                <strong>12 seconds per span</strong> across an 8-hour day. The documented control is
+                <em class="q">review</em>; the achievable control at this volume is
+                <em class="q">triage</em>.</td></tr>
+              <tr><td class="k">Basis</td><td>Span volume from SOW §1.2; staffing from ops procedure
+                VM-114 §3; no throughput assumption stated in either document.</td></tr>
+              <tr><td class="k">Status</td><td><span class="chip">Advisory</span> Cannot change the tier.
+                Routed to the member for response.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="call"><strong>The member declines to change its score, and records why.</strong>
+          The disagreement is preserved rather than resolved — it travels with the file into
+          cross-member review.</div>
+      </div>
+      <figure class="fig">
+        <svg viewBox="0 0 400 250" role="img" aria-label="Nominal oversight assumes a planner reviews each of 180,000 work orders. Divided across one planner's working year, the achievable time per span is about twelve seconds, which supports triage rather than review.">
+          <text x="200" y="18" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" letter-spacing="1.3" fill="var(--ink-soft)">NOMINAL VS EFFECTIVE OVERSIGHT</text>
+          <rect x="20" y="34" width="360" height="46" fill="var(--sunken)"/>
+          <text x="200" y="54" text-anchor="middle" font-size="12.5" fill="currentColor">Documented control: planner reviews</text>
+          <text x="200" y="71" text-anchor="middle" font-size="12.5" fill="currentColor">every generated work order</text>
+          <line x1="200" y1="80" x2="200" y2="104" stroke="currentColor" stroke-width="1" marker-end="url(#ar)"/>
+          <text x="200" y="122" text-anchor="middle" font-size="12.5" fill="currentColor">180,000 spans ÷ 1 planner-year</text>
+          <line x1="200" y1="130" x2="200" y2="152" stroke="var(--amber)" stroke-width="1" marker-end="url(#arAm)"/>
+          <rect x="60" y="156" width="280" height="52" fill="var(--amber-soft)"/>
+          <text x="200" y="182" text-anchor="middle" font-size="22" font-weight="700" fill="var(--amber-strong)">≈ 12 seconds / span</text>
+          <text x="200" y="200" text-anchor="middle" font-size="11.5" fill="var(--amber-strong)">across an 8-hour day, sustained</text>
+          <text x="200" y="232" text-anchor="middle" font-size="13" font-style="italic" fill="currentColor">&ldquo;That is not review, it is a queue.&rdquo;</text>
+        </svg>
+        <figcaption>The arithmetic nobody had written down, in either document.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 04 — the operating envelope">
+  <div class="shead">
+    <p class="snum">39 <b>Stage 04 · VM planner + engineer · 75 minutes</b></p>
+    <h2>Writing the envelope produced the finding of the whole exercise</h2>
+    <p class="ssub">The Operating Envelope and the Change Envelope are fields no utility has written
+      before. This is where the worked example earns its keep.</p>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="grid g2">
+        <div class="card tint"><p class="lbl acc">Valid — auto work order permitted</p>
+          <ul class="li tight" style="margin-top:.3cqw">
+            <li>Imagery captured April–October (leaf-on), cloud cover &lt; 20%</li>
+            <li>Terrain slope ≤ 25°</li>
+            <li>Species within the 12-species trained set</li>
+            <li>Canopy density ≤ 0.7 LAI proxy</li>
+            <li>Conductor visible in ≥ 2 oblique views</li>
+          </ul></div>
+        <div class="card warn"><p class="lbl amb">Out of envelope — manual patrol, no auto work order</p>
+          <ul class="li tight" style="margin-top:.3cqw">
+            <li>Leaf-off / winter acquisition</li>
+            <li>Terrain slope &gt; 25°</li>
+            <li>Species outside the trained set</li>
+            <li>Post-fire regrowth areas — <strong>no training data exists for this condition</strong></li>
+          </ul></div>
+      </div>
+      <div class="stack">
+        <figure class="fig">
+          <svg viewBox="0 0 400 190" role="img" aria-label="Of the spans assessed each year, about 17 percent fall outside the newly declared operating envelope — steep terrain and post-fire regrowth — and had been auto-processed into work orders anyway for three years.">
+            <rect x="10" y="30" width="380" height="54" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1"/>
+            <rect x="325.6" y="30" width="64.4" height="54" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="1"/>
+            <text x="168" y="62" text-anchor="middle" font-size="13" fill="var(--accent-deep)">83% inside the declared envelope</text>
+            <text x="357" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="var(--amber)">17%</text>
+            <text x="200" y="20" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" letter-spacing="1.3" fill="var(--ink-soft)">180,000 SPANS ASSESSED PER YEAR</text>
+            <line x1="357" y1="84" x2="357" y2="90" stroke="var(--amber)" stroke-width="1"/>
+            <text x="200" y="132" text-anchor="middle" font-size="12.5" fill="currentColor">Steep terrain and post-fire regrowth —</text>
+            <text x="200" y="150" text-anchor="middle" font-size="12.5" fill="currentColor">auto-processed into work orders anyway,</text>
+            <text x="200" y="168" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--amber)">for three years, with no flag.</text>
+          </svg>
+          <figcaption>Comparing the envelope against actual flight and terrain data.</figcaption>
+        </figure>
+        <div class="call amb"><strong>Nobody had done anything wrong.</strong> The envelope had simply
+          never been written down, so there was nothing to be outside of.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 04 — the change envelope">
+  <div class="shead">
+    <p class="snum">40 <b>Stage 04 · the change envelope</b></p>
+    <h2>Borrowed directly from the FDA's PCCP pattern</h2>
+    <p class="ssub">Pre-authorize the envelope of change, so routine vendor updates do not each trigger a
+      fresh review.</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g3">
+      <div class="card tint">
+        <p class="lbl acc">May change with no reassessment</p>
+        <ul class="li tight" style="margin-top:.3cqw">
+          <li>Retraining on additional imagery from <strong>within the defined envelope</strong>,
+            provided stratified recall on the held-out set drops no more than 2 percentage points on
+            any stratum</li>
+          <li>Detection threshold tuning within [0.62, 0.78]</li>
+        </ul>
+      </div>
+      <div class="card sunk">
+        <p class="lbl">Requires pod review — 30 days</p>
+        <ul class="li tight" style="margin-top:.3cqw">
+          <li>New species added to the trained set</li>
+          <li>Change to work-order priority logic</li>
+          <li>Model architecture change</li>
+        </ul>
+      </div>
+      <div class="card warn">
+        <p class="lbl amb">Requires full reassessment</p>
+        <ul class="li tight" style="margin-top:.3cqw">
+          <li>Any envelope extension — new terrain class or acquisition season</li>
+          <li>Any increase in autonomy, e.g. auto-dispatch without planner review</li>
+          <li>Vendor foundation or backbone model swap</li>
+        </ul>
+      </div>
+    </div>
+    <div class="call"><strong>Before this field existed, MSA §7.3 governed model change</strong> — vendor
+      updates on 30 days' notice with no revalidation requirement, and two updates already shipped
+      unreviewed. The change envelope is what converts a contractual notice period into an assurance
+      control.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 05 — agent red team">
+  <div class="shead">
+    <p class="snum">41 <b>Stage 05 · Red-Team agent · 20 min unattended</b></p>
+    <h2>Three substantive findings, three shallow ones absorbed</h2>
+    <p class="ssub">The shallow findings are exactly what the agent should be clearing, so that human
+      reviewers never spend a minute on them.</p>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="lbl amb">Substantive — routed to the member</p>
+        <div class="card warn"><p class="ct">The headline metric is unverifiable in production</p>
+          <p class="cb">Recall of 0.94 is asserted from vendor internal validation. With no
+            false-negative observation mechanism, the deployed system cannot confirm or refute it.
+            <strong>The file's central performance claim has no evidence path.</strong></p></div>
+        <div class="card warn"><p class="ct">Deployment exceeds the declared envelope</p>
+          <p class="cb">~17% of assessed spans fall outside the stated operating envelope and are
+            auto-processed regardless. <strong>Either the envelope or the deployment is wrong; both
+            cannot stand.</strong></p></div>
+        <div class="card warn"><p class="ct">Performance claim predates two model changes</p>
+          <p class="cb">Vendor shipped two updates in 18 months under MSA §7.3. The recall figure was
+            measured before both. No revalidation evidence exists for the currently deployed weights.</p></div>
+      </div>
+      <div class="stack">
+        <p class="lbl">Shallow — cleared without human time</p>
+        <div class="card sunk"><p class="ct">Oversight procedure predates the system</p>
+          <p class="cb">VM-114 was written in 2019 for manual patrol workflows and has not been revised
+            for AI-generated work orders.</p></div>
+        <div class="card sunk"><p class="ct">No named accountable owner</p>
+          <p class="cb">The file lists a vendor contact and a department. No individual is accountable
+            for the system's continued fitness.</p></div>
+        <div class="card sunk"><p class="ct">The review guardrail has no rejection criteria</p>
+          <p class="cb">&ldquo;Planner reviews the queue&rdquo; defines no basis on which a planner
+            would reject a generated work order, and no record is kept when one is rejected.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 06 — the disagreement">
+  <div class="shead">
+    <p class="snum">42 <b>Stage 06 · two peer utilities · week 12 · 60 min each</b></p>
+    <h2>Three utilities, three defensible tiers, same evidence</h2>
+    <p class="ssub">Each reviewer is asked the single question the whole program turns on: would you
+      deploy this in your territory on this evidence?</p>
+  </div>
+  <div class="sbody">
+    <div class="grid g3">
+      <div class="card">
+        <p class="ct"><span class="chip l3">TIER 3</span></p>
+        <p class="lbl">Nominating member</p>
+        <p class="cb" style="font-size:1.3cqw; line-height:1.4"><em class="q">&ldquo;A qualified planner
+          reviews every work order before any crew is dispatched.&rdquo;</em></p>
+        <p class="cb">Holds that a human decision gate sits between model output and physical action,
+          which is what the autonomy dimension is meant to capture.</p>
+      </div>
+      <div class="card">
+        <p class="ct"><span class="chip l4">TIER 4</span></p>
+        <p class="lbl">Reviewing member B</p>
+        <p class="cb" style="font-size:1.3cqw; line-height:1.4"><em class="q">&ldquo;At 180,000 spans a
+          year that is twelve seconds per span. That is not review, it is a queue.&rdquo;</em></p>
+        <p class="cb">Holds that oversight which cannot be exercised at the required throughput is not a
+          control. Effective autonomy exceeds nominal autonomy.</p>
+      </div>
+      <div class="card">
+        <p class="ct"><span class="chip l3">TIER 3</span></p>
+        <p class="lbl">Reviewing member C</p>
+        <p class="cb" style="font-size:1.3cqw; line-height:1.4"><em class="q">&ldquo;Tier 3, but only
+          with stratified monitoring as a condition of the tier.&rdquo;</em></p>
+        <p class="cb">Accepts the lower tier only if the unobservable-failure gap is closed — making the
+          tier contingent on a control rather than on the architecture.</p>
+      </div>
+    </div>
+    <div class="call amb"><strong>The disagreement is the deliverable.</strong> Under the old model this
+      would be smoothed into consensus language in a working session. Here it is the most valuable
+      output of the file, because it exposes a real hole: <strong>the rubric never distinguished
+      documented oversight from achievable oversight.</strong></div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 07 — what the member decides">
+  <div class="shead">
+    <p class="snum">43 <b>Stage 07 · Pod A + Pod B · 15 min member time</b></p>
+    <h2>The member's own decision, and the request to the vendor</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="lbl acc">1 · DECISION-0143 — operating restriction, effective immediately</p>
+        <table class="t">
+          <tbody>
+            <tr><td class="k" style="width:30%">Continue?</td><td><strong>Yes — with conditions.</strong>
+              The system stays in production.</td></tr>
+            <tr><td class="k">Restriction</td><td>Auto work-order generation limited to in-envelope
+              spans. The ~17% out-of-envelope population routes to manual patrol.</td></tr>
+            <tr><td class="k">New control</td><td>Stratified false-negative sampling: 400 randomly
+              selected unflagged spans per quarter receive ground verification.</td></tr>
+            <tr><td class="k">Vendor action</td><td>Evidence request issued, 60-day response window.</td></tr>
+            <tr><td class="k">Reassessment</td><td>On first sampling result, or on any vendor model
+              update, whichever comes first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">2 · The vendor evidence request</p>
+        <p class="p">Five specific asks — <strong>the same five any of the 25 members would now
+          send</strong>, which is the point.</p>
+        <ul class="li">
+          <li>Recall stratified by species, terrain slope band, canopy density and acquisition season</li>
+          <li>Independent validation on a held-out sample from <em class="q">this</em> territory</li>
+          <li>Change log for all model updates since deployment, with revalidation evidence per update</li>
+          <li>A declared operating envelope for the product, in the vendor's own words</li>
+          <li>A supported false-negative sampling protocol</li>
+        </ul>
+        <div class="call">Twenty-five utilities asking for the same evidence package is where collective
+          buying power converts into real market change — and it costs the group nothing beyond
+          agreeing on the template.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="Stage 07 — registry and framework">
+  <div class="shead">
+    <p class="snum">44 <b>Stage 07 · what leaves the file</b></p>
+    <h2>One registry entry, and two changes for all 25 members</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="lbl acc">3 · The registry entry</p>
+        <div class="card sunk">
+          <p class="lbl">REGISTRY · AI-0143 · VMS-1 · <span class="chip l3">TIER 3</span>
+            <span class="chip amb">Conditional</span></p>
+          <table class="t" style="margin-top:.4cqw">
+            <tbody>
+              <tr><td class="k" style="width:38%">Tier</td><td>3 — <strong>conditional</strong> on
+                stratified monitoring. Dissenting position (Tier 4) recorded and linked.</td></tr>
+              <tr><td class="k">Autonomy</td><td>Human-on-the-loop, throughput-constrained</td></tr>
+              <tr><td class="k">Envelope status</td><td>Declared · deployment now restricted to
+                in-envelope spans</td></tr>
+              <tr><td class="k">Evidence completeness</td><td>7 of 11 fields fully evidenced; 4 pending
+                vendor response</td></tr>
+              <tr><td class="k">Provenance</td><td>Agent-drafted, member-ratified —
+                <span class="chip">tagged for calibration analysis</span></td></tr>
+              <tr><td class="k">Next trigger</td><td>Q1 sampling result, or vendor model update</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">4 · What the sector got</p>
+        <div class="card tint"><p class="lbl acc">Pod A · new rubric sub-criterion</p>
+          <p class="ct">Effective vs. nominal oversight</p>
+          <p class="cb">Autonomy scoring now asks whether reviewer throughput can support the claimed
+            depth of review. <strong>An oversight control that cannot be exercised at operating volume
+            does not reduce the autonomy score.</strong></p></div>
+        <div class="card tint"><p class="lbl acc">Pod B · new required risk-file field</p>
+          <p class="ct">Observability of failure</p>
+          <p class="cb">Every file must state how the system's errors become visible.
+            <strong>&ldquo;They don't&rdquo; is an acceptable answer — and an automatic
+            escalation.</strong></p></div>
+        <div class="call amb"><strong>Neither change was anybody's idea in a working session.</strong>
+          Both fell out of one member trying to fill in a template about a system they had run for three
+          years without incident.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="What it cost">
+  <div class="shead">
+    <p class="snum">45 <b>The ledger</b></p>
+    <h2>Three hours thirty, against roughly fourteen</h2>
+  </div>
+  <div class="sbody">
+    <div class="split wide-left">
+      <table class="t">
+        <thead><tr><th style="width:20%">Stage</th><th style="width:14%">Actor</th><th style="width:14%">Member min</th><th>What the time bought</th></tr></thead>
+        <tbody>
+          <tr><td class="k">00 Intake</td><td class="mono">Member</td><td class="num">10</td><td>Nomination and document pointers</td></tr>
+          <tr><td class="k">01 Pre-fill</td><td class="mono">Agent</td><td class="num">0</td><td>7 fields sourced, 4 gaps identified</td></tr>
+          <tr><td class="k">02 Tiering</td><td class="mono">Member</td><td class="num">40</td><td>Independent scores on 4 dimensions</td></tr>
+          <tr><td class="k">03 Second opinion</td><td class="mono">Agent</td><td class="num">0</td><td>The autonomy dispute</td></tr>
+          <tr><td class="k">04 Close gaps</td><td class="mono">Member</td><td class="num">75</td><td>Operating envelope, change envelope — and the 17% discovery</td></tr>
+          <tr><td class="k">05 Agent red team</td><td class="mono">Agent</td><td class="num">20</td><td>3 substantive findings; 3 shallow ones absorbed</td></tr>
+          <tr><td class="k">06 Cross-member</td><td class="mono">Peers</td><td class="num">60</td><td>The tier disagreement</td></tr>
+          <tr><td class="k">07 Ratify</td><td class="mono">Pod</td><td class="num">15</td><td>Registry entry + 2 framework changes</td></tr>
+        </tbody>
+      </table>
+      <div class="stack">
+        <div class="stat"><span class="n big acc">3:30</span>
+          <span class="u">member time, plus ~2.5 hrs unattended agent time</span></div>
+        <div class="bars">
+          <div class="bar"><span class="bl">From a blank template</span>
+            <span class="bt"><i class="bf mute" style="width:100%"></i></span><span class="bv">~14 h</span></div>
+          <div class="bar"><span class="bl">With the fleet</span>
+            <span class="bt"><i class="bf" style="width:25%"></i></span><span class="bv">3.5 h</span></div>
+        </div>
+        <div class="call">At two files per member, <strong>that difference is what funds the tripled
+          judgment reserve</strong> — 8 hours to 24.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-part="Worked example" data-title="What to take from this">
+  <div class="shead">
+    <p class="snum">46 <b>Close</b></p>
+    <h2>What to take from this</h2>
+  </div>
+  <div class="sbody">
+    <div class="split">
+      <div class="stack">
+        <p class="lede">The gaps are the product, not the filled fields.</p>
+        <p class="p">Seven sourced fields told the member nothing they did not already know. The four
+          gaps produced an operating restriction, a vendor evidence request, a conditional registry
+          entry, and two framework changes that now apply to all 25 members.</p>
+        <div class="call"><strong>This is the credibility asset.</strong> &ldquo;We ran this framework on
+          ourselves first, and here is what it got wrong&rdquo; is worth more to a skeptical utility
+          CISO than any amount of framework prose.</div>
+      </div>
+      <div class="stack">
+        <p class="lbl acc">The pattern, generalized</p>
+        <ul class="li">
+          <li><strong>Agents draft, members decide.</strong> The agent's most valuable output was a
+            refusal to fill four fields.</li>
+          <li><strong>Order matters.</strong> Humans tier before seeing the copilot, or the calibration
+            data measures model agreement instead of sector consensus.</li>
+          <li><strong>Preserve dissent.</strong> The three-way tier split was not noise to be resolved —
+            it was the sector's open question, made explicit.</li>
+          <li><strong>Write the envelope.</strong> The single field no utility has today produced a
+            three-year-old finding in seventy-five minutes.</li>
+          <li><strong>Ask how failure becomes visible.</strong> If the answer is &ldquo;it doesn't,&rdquo;
+            no other metric in the file can be trusted.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider" data-part="Worked example" data-title="Sources">
+  <p class="pn">Sources</p>
+  <h2>Built from two documents</h2>
+  <p class="pd">This deck is assembled entirely from the SAFERai.power research brief and proposed
+    working strategy, and from the VMS-1 worked example. Standards, dates and figures carry the
+    confidence notes stated in the brief — EPRI-specific detail is search-extracted rather than
+    retrieved directly, and VMS-1 is an illustrative composite, not a real utility's system.</p>
+</section>
+
+
+
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="btn" id="prev">← Prev</button>
+  <button class="btn" id="next">Next →</button>
+  <span class="count"><span id="cur">1</span> / <span id="tot">1</span></span>
+  <span class="prog"><i id="progf"></i></span>
+  <span class="now" id="now"></span>
+</nav>
+
+<div class="index" id="index" role="dialog" aria-modal="true" aria-label="Slide index">
+  <h3>Index <button class="btn" id="idxClose" style="margin-left:.8rem">Close</button></h3>
+  <div id="idxBody"></div>
+</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0;
+  var cur = document.getElementById('cur'), tot = document.getElementById('tot');
+  var progf = document.getElementById('progf'), now = document.getElementById('now');
+  var prev = document.getElementById('prev'), next = document.getElementById('next');
+  var index = document.getElementById('index');
+
+  tot.textContent = slides.length;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+    cur.textContent = i + 1;
+    progf.style.width = ((i + 1) / slides.length * 100) + '%';
+    var s = slides[i];
+    now.textContent = (s.dataset.part || '') + ' · ' + (s.dataset.title || '');
+    prev.disabled = i === 0;
+    next.disabled = i === slides.length - 1;
+    slides[i].scrollTop = 0;
+    if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  prev.addEventListener('click', function () { show(i - 1); });
+  next.addEventListener('click', function () { show(i + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (index.classList.contains('on')) { if (e.key === 'Escape') toggleIdx(false); return; }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { show(0); e.preventDefault(); }
+    else if (e.key === 'End') { show(slides.length - 1); e.preventDefault(); }
+    else if (e.key === 'o' || e.key === 'O') { toggleIdx(true); e.preventDefault(); }
+  });
+
+  /* build index */
+  var body = document.getElementById('idxBody'), lastPart = null, grid = null;
+  slides.forEach(function (s, k) {
+    if (s.dataset.part !== lastPart) {
+      lastPart = s.dataset.part;
+      var h = document.createElement('p');
+      h.className = 'idxpart'; h.textContent = lastPart;
+      body.appendChild(h);
+      grid = document.createElement('div'); grid.className = 'idxgrid';
+      body.appendChild(grid);
+    }
+    var b = document.createElement('button');
+    b.className = 'idxi';
+    b.innerHTML = '<span class="in">' + String(k + 1).padStart(2, '0') + '</span><span>' +
+                  (s.dataset.title || '') + '</span>';
+    b.addEventListener('click', function () { show(k); toggleIdx(false); });
+    grid.appendChild(b);
+  });
+
+  function toggleIdx(on) { index.classList.toggle('on', on); }
+  document.getElementById('idxBtn').addEventListener('click', function () { toggleIdx(true); });
+  document.getElementById('idxClose').addEventListener('click', function () { toggleIdx(false); });
+
+  var start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
