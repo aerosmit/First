@@ -20,7 +20,7 @@ search results and mirrors): the SAFER acronym, the founding member list, the st
 mapping, the ~80-hour SME contribution, SDF eligibility, and the deliverable categories.
 
 Treat as **medium confidence and worth verifying directly with EPRI**: exact phase dates, the
-governance model, per-workstream structure, and any fee schedule. Section 9 lists the specific
+governance model, per-workstream structure, and any fee schedule. Section 10 lists the specific
 questions to close.
 
 > **Naming collision, worth knowing.** `SaferAI` (safer-ai.org) is a *separate* French non-profit
@@ -105,7 +105,7 @@ person-year does not write a standard. One person-year *can* harvest, reconcile,
 material that already exists.
 
 **Strategic consequence: SAFERai.power must run as a harvest-and-ratify operation, not an
-authoring operation.** Everything in Sections 5–7 follows from this.
+authoring operation.** Everything in Sections 5–8 follows from this.
 
 Contribution domains named by EPRI are worth noting because they shape who members should send:
 
@@ -612,7 +612,257 @@ evidence package no vendor can produce is not a standard, it is a wish.
 
 ---
 
-## 7. After the MVP
+## 7. Building it with agentic AI
+
+### 7.1 Why this is not optional
+
+An AI assurance initiative that produces its output through manual document drafting is
+self-refuting. If the group cannot use agentic AI to build its own framework — under its own
+guardrails, with its own evidence discipline — it has no standing to tell 25 utilities how to do it.
+
+The structural argument is stronger than the rhetorical one. Return to the binding constraint:
+
+```
+25 organizations × 80 hours = 2,000 SME hours ≈ 0.96 FTE-years
+```
+
+**Agentic AI is the only lever that changes this number without more money.** More members adds
+coordination cost roughly as fast as it adds hours. More meetings consumes the budget rather than
+extending it. Only automating the non-judgment work actually moves the constraint.
+
+And the division is unusually clean here, because Section 5 already established it:
+
+| Work type | Examples | Who does it |
+|---|---|---|
+| **Harvest, extract, cross-map, draft, format, reconcile wording, check consistency** | Pulling clause-level requirements out of UL 4600; building the NIST↔ISO↔62443 crosswalk; pre-filling a risk file from existing architecture docs | **Agents** |
+| **Judge, set thresholds, accept or reject evidence, decide tiers, register dissent** | "Would I deploy this in my territory on this evidence?" | **Members — and only members** |
+
+Today, most of a member's 80 hours goes to the first category. That is the waste. The whole point of
+the agent fleet is to invert the ratio.
+
+**Revised 80-hour allocation, agent-accelerated:**
+
+| Activity | Manual | With agents | Change |
+|---|---|---|---|
+| Contribute use cases + draft risk files | 16 | 6 | Drafter pre-fills; member corrects and confirms |
+| Pod working sessions | 20 | 12 | Agent-prepared decision packets; sessions decide rather than draft |
+| Red-team another member's files | 16 | 20 | **Increased** — agent clears the shallow findings, humans get the hard ones |
+| Internal socialization | 12 | 12 | Unchanged. Human work. |
+| Steering / plenary | 8 | 6 | |
+| **Judgment reserve — calibration, dissent, threshold-setting** | 8 | **24** | **Tripled. This is the point.** |
+| **Total** | **80** | **80** | Same cost, ~3× the judgment |
+
+The member's hours do not go down. **The fraction spent on the thing only they can do goes from 10%
+to 30%.**
+
+### 7.2 The organizing idea: the agent fleet is Use Case Zero
+
+> **Every agent built to deliver SAFERai.power is itself tiered, risk-filed, guardrailed, and
+> entered in the registry — under the framework it is helping to build.**
+
+This is the single highest-leverage decision available to the group, and it costs almost nothing:
+
+1. **It produces the first risk files for free.** Roughly 8–10 completed files exist before week 4,
+   authored by the people who wrote the template. The corpus starts non-empty.
+2. **It stress-tests the rubric on genuinely agentic systems** before v1.0 ships — rather than on
+   the tractable supervised-learning cases the group will naturally gravitate toward.
+3. **It answers open question 7 empirically.** Whether agentic systems are in scope for v1.0 stops
+   being a debate and becomes an observation: the group will have tiered eight of them.
+4. **It is the credibility asset.** "We ran this framework on ourselves first, and here is what it
+   got wrong" is worth more to a skeptical utility CISO than any amount of framework prose.
+5. **It creates the failure data early**, while the stakes are a document rather than a substation.
+
+There is a nice recursion worth stating plainly: the group's own Tiering Copilot is probably a
+Tier 2 system — IT context, human-reviewed output, reversible, moderate exposure. The Horizon Scanner
+is Tier 1. Any agent that ingests member OT documentation jumps higher. **Working out why is exactly
+the calibration exercise the MVP needs**, and the group can run it in week 3 on systems it controls.
+
+### 7.3 The fleet
+
+Eight agents, mapped to pods and deliverables. Each is scoped narrowly enough to be assured.
+
+| Agent | Serves | What it does | Binding guardrail | Human ratifier |
+|---|---|---|---|---|
+| **Harvester** | Pods A–D | Ingests the Section 4 source corpus; emits clause-level extracts with source locators | **Every claim carries a verifiable citation. Retrieval-grounded only — no uncited assertions.** | Pod lead |
+| **Crosswalk** | Pod A | Builds and maintains the matrix: SAFERai control ↔ NIST AI RMF subcategory ↔ ISO 42001 clause ↔ IEC 62443 ↔ NERC CIP ↔ EU AI Act article | Proposes mappings; cannot publish one. Confidence-scored, low-confidence flagged for review | Pod A + Steering |
+| **Tiering Copilot** | Pod A | Given a use case, proposes a tier with reasoning against the rubric | **Produces the second opinion, never the first.** Human tiers before seeing agent output | Contributing member |
+| **Risk File Drafter** | Pod B | Ingests what the member already has — architecture docs, model cards, vendor security questionnaires, procurement records, MLOps metadata — and pre-fills the risk file, flagging gaps | Gaps must be marked as gaps, never inferred or smoothed. No field is populated without a source | Contributing member |
+| **Red-Team** | Pod C | Attacks completed risk files: missing evidence, unsupported claims, envelope gaps, guardrails that are theatre | Runs *before* human red-team, never instead of it | Reviewing member |
+| **Conformance Checker** | Pod B | Checks a vendor's submitted provider package against the spec; returns a gap list | Advisory only — cannot pass or fail a vendor | Pod B |
+| **Horizon Scanner** | Steering | Continuous watch on ATLAS/OWASP updates, NIST releases, FERC/NERC dockets, EU AI Act omnibus, ARP6983 progress, adjacent-sector incidents | Proposes change-envelope actions; cannot trigger one | Steering |
+| **Reconciliation** | Pods A–D | Clusters member positions; separates substantive disagreement from terminological disagreement | **Must surface dissent, never resolve it.** Minority positions are preserved verbatim | Pod lead |
+
+Two of these carry disproportionate weight:
+
+- **The Risk File Drafter is what drives member participation up.** It converts "four hours of
+  writing from a blank template" into "forty-five minutes of correcting a draft." That is the
+  difference between the MVP's usability criterion being aspirational and being met — and it is what
+  lets a member who can only spare 20 hours still contribute real files.
+- **The Crosswalk agent handles the deliverable that goes stale fastest.** A standards mapping is
+  enormous manual labor, near-perfectly suited to automation, and obsolete within months of
+  publication. Making it agent-maintained on a schedule is the difference between a living crosswalk
+  and a PDF nobody trusts after year one.
+
+### 7.4 The hard rule, and three failure modes
+
+> **Agents draft. Members decide. Nothing enters v1.0 on agent authority.**
+
+Every agent output has a named human ratifier — the table above assigns them. Three specific ways
+this goes wrong, in order of how badly:
+
+**1. Convergence collapse — the serious one.** If all 25 members use the same model to draft their
+risk files, the outputs correlate. The MVP's headline acceptance criterion — *two independent
+utilities tier the same use case identically ≥80% of the time* — then measures **model agreement,
+not sector consensus**, and the number looks excellent while meaning nothing.
+
+This is subtle, it is easy to miss, and it would quietly invalidate the group's central
+calibration metric.
+
+Countermeasures, all cheap:
+- Tag every risk file with its provenance: manual, agent-assisted, or agent-drafted.
+- Compute inter-rater reliability **within and across provenance classes separately**, and report all
+  three numbers. Divergence between them is the diagnostic.
+- Require the Tiering Copilot to produce the second opinion only — members tier before seeing it.
+- Deliberately run a mixed-model fleet across pods rather than standardizing on one.
+- Hold back a manual-only control set of ~10 use cases as ground truth.
+
+**2. Citation laundering.** Plausible-sounding references to standards clauses that do not exist.
+Severe here specifically because the group's whole product is standards mappings, and a fabricated
+ISO clause reference could propagate into a published crosswalk and from there into a utility's
+compliance argument. Countermeasure: source locators mandatory, spot-audited by the red team, and the
+Crosswalk agent's output confidence-scored with low-confidence mappings blocked from publication.
+
+**3. Agent-generated consensus.** An agent asked to summarize member positions will smooth them into
+agreement, because that is what summarization does. Section 5 established that **the disagreements
+are the finding** — where two utilities differ on evidence sufficiency, that is the sector's real
+open question. An agent that averages them away destroys the most valuable output of the program.
+Hence the Reconciliation agent's guardrail: surface dissent, never resolve it; preserve minority
+positions verbatim.
+
+### 7.5 The new way of working: the continuous consortium
+
+The traditional industry-consortium operating model is meeting-driven and batch: quarterly
+convenings, documents drafted between them, progress visible only at release. Agentic AI makes a
+different model available.
+
+| | Traditional consortium | Continuous consortium |
+|---|---|---|
+| **Unit of work** | The meeting | The artifact |
+| **Cadence** | Quarterly document releases | Continuously updated living repository |
+| **What a session is for** | Drafting, discussing, aligning | **Deciding.** Agents prepare the decision packet in advance |
+| **Participation floor** | Full 80 hours or you cannot keep up | ~20 hours still produces real contribution |
+| **Progress visibility** | Status decks | Live dashboard: files completed, gaps flagged, disagreements open |
+| **Contribution shape** | Attendance | Ratified artifacts |
+| **Drafting cycle** | 6 weeks | ~1 week |
+
+Four practices make it real:
+
+**Decision packets, not agendas.** Before each working session, agents assemble: the options, the
+evidence for each, the crosswalk implications, and — most importantly — an explicit map of where
+members currently disagree. Members arrive to decide, not to discover. A 90-minute session then
+resolves what previously took three meetings.
+
+**A standing artifact, not a standing meeting.** The framework lives as a versioned repository with
+open issues, not as a document that gets released. Members contribute asynchronously against open
+items. This is how open-source infrastructure gets built, and it suits a 3-hour-per-week
+contribution pattern far better than synchronous convening does.
+
+**A workbench, not a workload.** This is the answer to getting more member involvement. Today
+participation means "find 80 hours of a scarce expert's time." With the fleet, a member's SME
+supplies judgment on drafts the agent prepared — which lowers the participation floor dramatically
+and lets members contribute *more* use cases, not fewer. **Raise the corpus target from 50 files to
+150**: same human hours, three times the calibration data.
+
+**Contribution becomes visible and measurable.** A live dashboard of files completed, gaps raised,
+disagreements registered, and red-team findings per member. Not for ranking members — for catching
+the week-12 failure mode in week 5, while there is still time to fix the pod structure.
+
+### 7.6 What member companies do with the fleet internally
+
+The fleet is not just program infrastructure. It is the most valuable thing a member takes home, and
+it should be positioned that way in recruiting.
+
+- **Seed your own registry on day one.** Point the Risk File Drafter at your existing AI inventory —
+  procurement records, cloud accounts, MLOps metadata, vendor questionnaires — and get a populated
+  registry instead of a spreadsheet someone has to fill in. *"We don't actually know what AI we have"*
+  is the single most common reason AI governance programs stall, and this is a direct answer to it.
+- **Governance-in-a-box for utilities that have none.** Most member utilities have no internal AI
+  governance function. The fleet plus the framework is a working starting point — worth considerably
+  more to them than the framework document alone.
+- **Reuse it for adjacent obligations.** The same evidence base feeds ISO/IEC 42001 certification,
+  NERC CIP documentation, and EU AI Act Annex III files for members with EU exposure. Assemble the
+  evidence once.
+- **Vendor diligence at scale.** Run the Conformance Checker across your existing AI vendor portfolio
+  and get a ranked gap list — immediately useful, independent of the consortium's timeline.
+
+**One deployment constraint governs all of this.** Members cannot send OT documentation, incident
+records, or grid architecture to a shared multi-tenant service. **The fleet must be packaged to run
+inside the member's own tenant** — containerized, model-agnostic, with no data egress by default.
+This is not a nice-to-have; it is the difference between adoption and non-adoption, and it needs to
+be an architectural requirement from week one rather than a retrofit.
+
+### 7.7 What this does to the timeline
+
+Applying the fleet to Section 5.4's 26-week plan:
+
+| Phase | Manual | With agents | What changes |
+|---|---|---|---|
+| Charter & harvest | Wk 1–2 | **Wk 1** | Harvester processes the source corpus in days; humans verify citations and reject bad mappings |
+| Draft v0.1 | Wk 3–6 | **Wk 2–4** | Agents assemble the mash-up from harvested clauses; pods edit rather than compose |
+| Apply to real systems | Wk 7–12 | **Wk 5–10** | Drafter makes each file cheap. **Target rises from 50 files to ~150** |
+| Calibrate | Wk 13–16 | **Wk 11–13** | Reliability computed continuously as files land, not in a batch at the end |
+| Red-team | Wk 17–20 | **Wk 12–15** | Agent clears shallow findings first; overlaps calibration |
+| v1.0 + tooling | Wk 21–24 | **Wk 14–16** | |
+| Land it | Wk 25–26 | **Wk 17–18** | |
+
+**Target: MVP in ~16–18 weeks instead of 26, with roughly 3× the calibration corpus, at the same
+2,000 hours.**
+
+State that as a target rather than a guarantee. The compression is real but it depends on the fleet
+being stood up in weeks 1–2, which means **the fleet is itself a week-one deliverable** — it belongs
+in the Section 11 immediate actions, not somewhere in phase two.
+
+### 7.8 Accelerating Release 2
+
+Phase two is where the leverage compounds, because by then the group has a year of operating evidence
+about its own agents.
+
+- **TEVV protocols.** Agents generate candidate test suites directly from the ATLAS technique catalog
+  and OWASP taxonomy, then execute automated red-team harnesses in the OPAI Sandbox. Test generation
+  is the bulk of TEVV effort and is almost entirely mechanical.
+- **Guardrail catalog.** Agents map each proposed guardrail to the threats it mitigates and — more
+  valuably — **identify threats no guardrail in the catalog covers**. Coverage gaps are hard to see
+  by hand and trivial to compute.
+- **Registry.** Continuous inventory discovery: agents scan procurement systems, cloud accounts and
+  MLOps platforms to find AI systems nobody registered. This directly attacks the number-one registry
+  failure mode, which is not bad schema but stale, incomplete data.
+- **Reference architectures.** Agent-drafted from the completed risk files for the highest-value OPAI
+  use cases, human-ratified.
+- **The autonomy ladder.** This is where Use Case Zero pays off most. Defining what must be true
+  before a system moves up a rung is guesswork in 2026 — unless the group has spent a year running
+  its own agent fleet under its own guardrails, with its own incident record. Then it is evidence.
+  **The group's operating experience with its own agents becomes the empirical basis for the
+  deliverable that matters most in 2027.**
+
+### 7.9 Governing the fleet
+
+- **Ownership.** EPRI hosts the reference implementation; members deploy their own instances. Open
+  source from day one, consistent with the initiative's stated toolkit commitment.
+- **Model neutrality is non-negotiable.** Microsoft and NVIDIA are founding members. If the fleet
+  couples to one vendor's models, the framework's neutrality is compromised and the mixed-model
+  countermeasure against convergence collapse becomes unavailable. Require a pluggable model
+  interface and run at least two model families across the pods.
+- **Cost.** Compute and engineering are natural in-kind contributions from the technology members —
+  a concrete, high-value way for them to participate that does not raise the vendor-capture concern,
+  because infrastructure contribution carries no vote on evidence requirements. Worth confirming
+  whether fleet development qualifies for SDF alongside participation.
+- **The fleet is in scope for its own red team.** The standing red team of Section 9.3 attacks the
+  agents as well as the framework. An agent fleet exempt from the group's own assurance discipline
+  would be the most damaging possible signal.
+
+---
+
+## 8. After the MVP
 
 Four releases, each gated on adoption of the prior one rather than on elapsed time.
 
@@ -659,13 +909,13 @@ Four releases, each gated on adoption of the prior one rather than on elapsed ti
 
 ---
 
-## 8. Staying ahead of the safety curve
+## 9. Staying ahead of the safety curve
 
 The hard problem is not writing v1.0. It is that AI capability moves faster than any standards
 process, and a framework written against 2026 systems will be actively misleading against 2028
 systems. Five mechanisms, in priority order.
 
-### 8.1 A change envelope for the framework itself
+### 9.1 A change envelope for the framework itself
 
 Apply FDA's PCCP logic reflexively. The framework should specify, in advance:
 
@@ -677,7 +927,7 @@ Apply FDA's PCCP logic reflexively. The framework should specify, in advance:
 Without this, v1.0 will sit untouched for two years and then be replaced wholesale by a v2.0 effort
 that costs as much as the original. Nearly every industry framework fails this way.
 
-### 8.2 Capability-triggered review
+### 9.2 Capability-triggered review
 
 Time-based review ("we revisit annually") is the wrong trigger, because capability does not arrive
 annually. Define **capability thresholds** that automatically trigger re-tiering:
@@ -691,7 +941,7 @@ annually. Define **capability thresholds** that automatically trigger re-tiering
 Each trigger names an owner and a clock. This is the difference between a framework that tracks
 reality and one that describes 2026 forever.
 
-### 8.3 A standing red team
+### 9.3 A standing red team
 
 A small rotating cell (2–3 people, refreshed quarterly across members) whose standing job is to
 break the framework, not the systems:
@@ -705,7 +955,7 @@ Red-team findings should be **published inside the consortium as first-class art
 A framework with a known, documented list of its own weaknesses is far more trustworthy — and far
 more useful — than one that claims completeness.
 
-### 8.4 Horizon scanning, reusing what EPRI already runs
+### 9.4 Horizon scanning, reusing what EPRI already runs
 
 EPRI already operates a **Technology Radar and Pulse Report** capability. Do not build a parallel one
 — attach an AI-assurance lens to it, with a standing quarterly item into the Steering Committee
@@ -717,7 +967,7 @@ SP 800-53 AI overlays, ISO/IEC TR 5469), cross-sector standards (ARP6983/ED-324 
 failures are public, well-investigated, and structurally similar. Reading someone else's accident
 report costs an hour.
 
-### 8.5 Guardrails as the primary control, standards as the secondary
+### 9.5 Guardrails as the primary control, standards as the secondary
 
 The deepest strategic point in this document:
 
@@ -746,7 +996,7 @@ systems.
 
 ---
 
-## 9. Open questions to close with EPRI
+## 10. Open questions to close with EPRI
 
 Verification items — several are load-bearing for the strategy above.
 
@@ -769,10 +1019,15 @@ Verification items — several are load-bearing for the strategy above.
    voluntary? This changes how carefully language must be drafted from day one.
 9. **International.** How does the Eurelectric/EPRI collaboration interact, particularly for EU AI
    Act Annex III alignment?
+10. **Agent fleet.** Is EPRI already building tooling for this program? Does fleet development
+    qualify for SDF? Can compute and engineering be accepted as in-kind contribution from technology
+    members without creating a governance claim?
+11. **Deployment model.** Can the fleet be packaged to run in-tenant at each member? *This gates
+    whether members can use it on real OT documentation at all — see Section 7.6.*
 
 ---
 
-## 10. Recommended immediate actions
+## 11. Recommended immediate actions
 
 | # | Action | Owner | Timing |
 |---|---|---|---|
@@ -785,7 +1040,10 @@ Verification items — several are load-bearing for the strategy above.
 | 7 | Draft the scope boundary — what is *not* an AI system — modeled on SR 26-2 | Pod A | Week 3 |
 | 8 | Brief executives using the Section 3.4 distinction to separate this from the data-center load debate | Program lead | Week 3 |
 | 9 | Watch the DCFlex and L2RPN videos as operating-model references | Pods A–D | Week 2 |
-| 10 | Establish quarterly horizon-scan feed off EPRI's existing Technology Radar | Steering | Week 4 |
+| 10 | **Stand up the Harvester and Risk File Drafter** — the two agents the week-1 and week-5 phases depend on | EPRI + tech members | **Week 1** |
+| 11 | Write risk files for the agent fleet itself (Use Case Zero); tier them under the draft rubric | Pod B | Week 3 |
+| 12 | Set the provenance-tagging and mixed-model policy before any file is drafted, so convergence collapse is measurable | Pod A + Steering | **Week 2** |
+| 13 | Establish quarterly horizon-scan feed off EPRI's existing Technology Radar (automate via Horizon Scanner) | Steering | Week 4 |
 
 ---
 
