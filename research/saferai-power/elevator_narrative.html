@@ -1,0 +1,471 @@
+<title>The Seventeen Percent</title>
+
+<style>
+  :root {
+    --ground:#F1F4F3; --surface:#FFFFFF; --sunken:#E5EAE8;
+    --ink:#131E1C; --ink-mid:#3D4E4A; --ink-soft:#5F706C;
+    --rule:#CED8D5; --rule-soft:#DFE6E4;
+    --accent:#0E6F63; --accent-deep:#0A544B; --accent-soft:#D5E7E3;
+    --amber:#97590F; --amber-soft:#F2E4D0; --amber-strong:#7E4A0C;
+    --sans: ui-sans-serif, "Helvetica Neue", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Hoefler Text", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0D1312; --surface:#151D1C; --sunken:#0A100F;
+      --ink:#E3EAE8; --ink-mid:#B0BFBB; --ink-soft:#8B9C97;
+      --rule:#2A3634; --rule-soft:#1E2827;
+      --accent:#4FC8B4; --accent-deep:#7FDCCB; --accent-soft:#10322D;
+      --amber:#D9A05B; --amber-soft:#2E2216; --amber-strong:#D9A05B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0D1312; --surface:#151D1C; --sunken:#0A100F;
+    --ink:#E3EAE8; --ink-mid:#B0BFBB; --ink-soft:#8B9C97;
+    --rule:#2A3634; --rule-soft:#1E2827;
+    --accent:#4FC8B4; --accent-deep:#7FDCCB; --accent-soft:#10322D;
+    --amber:#D9A05B; --amber-soft:#2E2216; --amber-strong:#D9A05B;
+  }
+
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--serif); font-size:16.5px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:60rem; margin-inline:auto; padding:0 clamp(1rem,4vw,2.4rem) 5rem; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+
+  .mast { padding:clamp(2.2rem,5vw,3.4rem) 0 0; }
+  .eyebrow {
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 1.1rem; display:flex; align-items:center; gap:.7rem; flex-wrap:wrap;
+  }
+  .eyebrow::after { content:""; flex:1 1 3rem; height:1px; background:var(--rule); min-width:2rem; }
+  h1 {
+    font-family:var(--sans); font-weight:770; font-size:clamp(2rem,5.2vw,3.2rem);
+    line-height:1.03; letter-spacing:-.034em; margin:0 0 1rem; max-width:16ch; text-wrap:balance;
+  }
+  .sub { font-size:clamp(1rem,1.9vw,1.16rem); line-height:1.5; color:var(--ink-mid); max-width:58ch; margin:0 0 2.4rem; }
+
+  .nav { display:grid; grid-template-columns:repeat(auto-fill,minmax(11rem,1fr)); gap:1px;
+         background:var(--rule-soft); border:1px solid var(--rule-soft); margin:0 0 3rem; }
+  .nav a { background:var(--surface); padding:.75rem .9rem; text-decoration:none; color:var(--ink);
+           display:flex; gap:.6rem; align-items:baseline; }
+  .nav a:hover, .nav a:focus-visible { background:var(--accent-soft); }
+  .nav b { font-family:var(--mono); font-size:.66rem; color:var(--accent); flex:none; }
+  .nav span { font-family:var(--sans); font-size:.83rem; font-weight:530; line-height:1.3; }
+
+  section { margin-bottom:3.4rem; scroll-margin-top:1rem; }
+  h2 { font-family:var(--sans); font-weight:730; font-size:clamp(1.35rem,2.8vw,1.8rem);
+       line-height:1.14; letter-spacing:-.026em; margin:0 0 .9rem; max-width:28ch; text-wrap:balance; }
+  h3 { font-family:var(--sans); font-weight:660; font-size:1.02rem; line-height:1.3;
+       letter-spacing:-.013em; margin:2rem 0 .6rem; }
+  h4 { font-family:var(--mono); font-weight:620; font-size:.67rem; letter-spacing:.13em;
+       text-transform:uppercase; color:var(--accent); margin:1.8rem 0 .6rem; }
+  p, ul, ol { max-width:66ch; }
+  p { margin:0 0 1rem; }
+  ul { margin:0 0 1.1rem; padding-left:1.15rem; }
+  li { margin-bottom:.42rem; }
+  li::marker { color:var(--accent); }
+  strong { font-weight:645; color:var(--ink); }
+  .snum { font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; text-transform:uppercase;
+          color:var(--accent); border-top:2px solid var(--accent); padding-top:.65rem; margin:0 0 1rem; }
+  .lead { font-size:1.04rem; color:var(--ink-mid); max-width:62ch; }
+
+  /* ── SCRIPT CARD ── */
+  .script { border:1px solid var(--rule); background:var(--surface); margin:0 0 1.6rem; }
+  .script.hero { border:2px solid var(--accent); }
+  .shead {
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem 1.1rem;
+    padding:.85rem 1.3rem; border-bottom:1px solid var(--rule-soft); background:var(--sunken);
+  }
+  .clock {
+    font-family:var(--mono); font-weight:600; font-size:1rem; letter-spacing:.04em;
+    color:var(--accent); font-variant-numeric:tabular-nums;
+  }
+  .stitle { font-family:var(--sans); font-weight:650; font-size:.94rem; letter-spacing:-.012em; }
+  .swords { font-family:var(--mono); font-size:.65rem; letter-spacing:.1em; text-transform:uppercase;
+            color:var(--ink-soft); margin-left:auto; }
+  .sbody { padding:1.4rem 1.3rem 1.5rem; }
+  @media (min-width:50rem) {
+    /* each beat label shares a grid row with the line it marks, so the margin notes
+       actually align with the words they describe */
+    .sbody { display:grid; grid-template-columns:7.5rem minmax(0,1fr);
+             column-gap:1.6rem; row-gap:1.15rem; align-items:baseline; }
+    .sbody .line { margin-bottom:0; }
+  }
+  .beat { font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+          color:var(--ink-soft); line-height:1.45; margin:0 0 .25rem; }
+  .beat b { color:var(--accent); font-weight:600; display:block; }
+  .line {
+    font-family:var(--serif); font-size:1.22rem; line-height:1.52;
+    margin:0 0 1.1rem; color:var(--ink); max-width:36ch;
+  }
+  .line b { font-weight:640; }
+  .sbody .pz {
+    display:inline-block; width:2px; height:.95em; background:var(--accent);
+    vertical-align:-.1em; margin:0 .42em; opacity:.55; border-radius:1px;
+  }
+
+  /* ── generic cards ── */
+  .cards { display:grid; gap:1px; background:var(--rule-soft); border:1px solid var(--rule-soft); margin:1.5rem 0 2rem; }
+  @media (min-width:50rem) { .cards.two { grid-template-columns:repeat(2,1fr); } .cards.three { grid-template-columns:repeat(3,1fr); } }
+  .card { background:var(--surface); padding:1.15rem 1.25rem 1.3rem; }
+  .card h5 { font-family:var(--sans); font-weight:670; font-size:.96rem; letter-spacing:-.014em;
+             line-height:1.27; margin:0 0 .45rem; }
+  .card p { font-size:.87rem; line-height:1.48; margin:0 0 .65rem; color:var(--ink-mid); max-width:none; }
+  .card p:last-child { margin-bottom:0; }
+  .card .tag { font-family:var(--mono); font-size:.61rem; letter-spacing:.12em; text-transform:uppercase;
+               color:var(--accent); margin:0 0 .4rem; }
+  .card .tag.amb { color:var(--amber-strong); }
+  .card .said { font-family:var(--serif); font-size:1rem; line-height:1.45; color:var(--ink);
+                border-left:2px solid var(--accent); padding-left:.8rem; margin:.55rem 0 0; }
+
+  .note { border-left:2px solid var(--accent); background:var(--accent-soft);
+          padding:1rem 1.2rem; margin:1.5rem 0; max-width:64ch; }
+  .note > :last-child { margin-bottom:0; }
+  .note p { font-size:.92rem; }
+  .note.warn { border-left-color:var(--amber); background:var(--amber-soft); }
+  .note.warn strong { color:var(--amber-strong); }
+  .note h5 { font-family:var(--mono); font-size:.63rem; letter-spacing:.13em; text-transform:uppercase;
+             color:var(--accent); margin:0 0 .45rem; font-weight:620; }
+  .note.warn h5 { color:var(--amber-strong); }
+
+  /* spine of numbers */
+  .spine { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule-soft);
+           border:1px solid var(--rule-soft); margin:1.5rem 0 2rem; }
+  .sp { background:var(--surface); padding:1.1rem 1.15rem 1.2rem; }
+  .sp b { display:block; font-family:var(--sans); font-weight:770; font-size:2.1rem;
+          letter-spacing:-.035em; line-height:1; margin-bottom:.45rem; color:var(--accent);
+          font-variant-numeric:tabular-nums; }
+  .sp span { display:block; font-size:.85rem; line-height:1.4; color:var(--ink-mid); }
+
+  .colophon { border-top:1px solid var(--rule); margin-top:3rem; padding-top:1.1rem;
+              font-family:var(--mono); font-size:.67rem; letter-spacing:.03em; color:var(--ink-soft);
+              line-height:1.65; max-width:70ch; }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">SAFERai.power · Spoken narrative</p>
+  <h1>The seventeen percent</h1>
+  <p class="sub">One story, cut to four lengths — under twenty seconds to two and a half minutes. The same
+    system, the same numbers, the same turn. Learn the shortest one cold and the others become
+    expansions of it rather than different speeches.</p>
+</header>
+
+<nav class="nav" aria-label="Contents">
+  <a href="#s1"><b>01</b><span>Why this story</span></a>
+  <a href="#s2"><b>02</b><span>:20 — the one-liner</span></a>
+  <a href="#s3"><b>03</b><span>:35 — the elevator</span></a>
+  <a href="#s4"><b>04</b><span>1:10 — the standard</span></a>
+  <a href="#s5"><b>05</b><span>2:35 — the opener</span></a>
+  <a href="#s6"><b>06</b><span>Delivery</span></a>
+  <a href="#s7"><b>07</b><span>When they interrupt</span></a>
+  <a href="#s8"><b>08</b><span>Change the last line</span></a>
+</nav>
+
+<section id="s1">
+  <p class="snum">01 · The premise</p>
+  <h2>Why this story and not a description of the program</h2>
+  <p class="lead">Nobody remembers a framework. They remember that a number everyone trusted turned
+    out to mean nothing, and that nobody had done anything wrong.</p>
+  <p>The story works because it has a reversal and no villain. A reversal makes it stick; the absence
+    of a villain is what makes a utility executive lean in rather than get defensive — because they are
+    hearing about their own systems, and they know it by the second sentence.</p>
+  <p>Three numbers carry the whole thing. <strong>Do not add a fourth.</strong> Every extra number you
+    introduce costs you one of these.</p>
+  <div class="spine">
+    <div class="sp"><b>94%</b><span>The reassuring number. Reported accuracy, three years, clean
+      record.</span></div>
+    <div class="sp"><b>17%</b><span>The turn. Share of the grid operating outside conditions nobody had
+      ever written down.</span></div>
+    <div class="sp"><b>3.5 hrs</b><span>The relief. What it costs one person to find that.</span></div>
+  </div>
+  <div class="note warn">
+    <h5>The one line that does the most work</h5>
+    <p><strong>&ldquo;Nobody did anything wrong.&rdquo;</strong> Without it the story is an exposé and
+      your listener gets defensive on behalf of their own operation. With it, the story is about a
+      systemic blind spot they share — and they start telling you about their version of it. That
+      reaction is the entire goal.</p>
+  </div>
+</section>
+
+<section id="s2">
+  <p class="snum">02 · Under twenty seconds</p>
+  <h2>For &ldquo;so what do you work on?&rdquo;</h2>
+  <div class="script hero">
+    <div class="shead">
+      <span class="clock">0:18</span>
+      <span class="stitle">The one-liner</span>
+      <span class="swords">38 words</span>
+    </div>
+    <div class="sbody">
+      <p class="beat"><b>Problem</b>already there</p>
+      <p class="line">Utilities are already running AI that nobody ever assessed as AI.</p>
+
+      <p class="beat"><b>Answer</b>who + what</p>
+      <p class="line">We're getting twenty-five of them to agree on how you prove one is <b>safe enough
+        to deploy</b> <span class="pz"></span> — and what evidence to demand from the vendor.</p>
+    </div>
+  </div>
+  <p>This is the version you will use most. It ends on a concrete noun — evidence from a vendor — which
+    is what makes people ask a follow-up instead of nodding politely.</p>
+</section>
+
+<section id="s3">
+  <p class="snum">03 · Half a minute</p>
+  <h2>The elevator</h2>
+  <div class="script hero">
+    <div class="shead">
+      <span class="clock">0:33</span>
+      <span class="stitle">The elevator — learn this one cold</span>
+      <span class="swords">72 words</span>
+    </div>
+    <div class="sbody">
+      <p class="beat"><b>Image</b>concrete</p>
+      <p class="line">A computer vision model decides which trees get cut near power lines.</p>
+
+      <p class="beat"><b>Comfort</b>the numbers</p>
+      <p class="line">Ninety-four percent accurate. Three years. Clean record.</p>
+
+      <p class="beat"><b>Turn</b>the reversal</p>
+      <p class="line">Then someone wrote down, for the first time, <b>the conditions it's actually
+        valid in.</b> <span class="pz"></span> Seventeen percent of the grid was outside them
+        <span class="pz"></span> — and the system had no way to see its own misses.</p>
+
+      <p class="beat"><b>Land</b>what we are</p>
+      <p class="line">SAFERai.power is twenty-five utilities agreeing on how you check.
+        <span class="pz"></span> Three and a half hours per system.</p>
+    </div>
+  </div>
+  <div class="note">
+    <h5>The mechanics of why it lands</h5>
+    <p>The first line is a picture, not a category — <em>trees, power lines</em>. The second lulls.
+      The third is the whole speech: <strong>&ldquo;the conditions it's actually valid in&rdquo;</strong>
+      is a phrase nobody in the industry can currently produce for their own systems, and the good
+      listeners realise that while you're still talking.</p>
+  </div>
+</section>
+
+<section id="s4">
+  <p class="snum">04 · About a minute</p>
+  <h2>The standard answer</h2>
+  <div class="script">
+    <div class="shead">
+      <span class="clock">1:12</span>
+      <span class="stitle">When they've asked a real question</span>
+      <span class="swords">157 words</span>
+    </div>
+    <div class="sbody">
+      <p class="beat"><b>Frame</b>not data centres</p>
+      <p class="line">Everyone's AI-and-the-grid conversation is about data centres.
+        <span class="pz"></span> This is the other one — AI <b>inside</b> the utility. And it's already
+        there, bought as a product feature.</p>
+
+      <p class="beat"><b>Case</b>the system</p>
+      <p class="line">A utility flies twelve thousand miles of power line a year. A vendor's model reads
+        the imagery and writes trim work orders straight into the work management system. Three years.
+        Ninety-four percent. Clean incident log.</p>
+
+      <p class="beat"><b>Turn 1</b>the envelope</p>
+      <p class="line">Then someone wrote down the conditions the model is valid in — which no one had
+        ever done. <span class="pz"></span> <b>Seventeen percent of spans were outside them</b>, and
+        being processed automatically anyway.</p>
+
+      <p class="beat"><b>Turn 2</b>unverifiable</p>
+      <p class="line">And the ninety-four percent turned out to be unverifiable. The system records the
+        trees it flags. <span class="pz"></span> It has no way to see the ones it misses.</p>
+
+      <p class="beat"><b>Absolve</b>no villain</p>
+      <p class="line"><b>Nobody did anything wrong.</b> <span class="pz"></span> The boundary had just
+        never been written down.</p>
+
+      <p class="beat"><b>Land</b>the ask</p>
+      <p class="line">That's what we build. Three and a half hours per system — and twenty-five
+        utilities asking every vendor for the same evidence.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s5">
+  <p class="snum">05 · Two and a half minutes</p>
+  <h2>The meeting opener</h2>
+  <p class="lead">Use this to open a briefing, or when someone has genuinely made room. It adds the two
+    things the shorter versions cut: what the utility actually did about it, and why this has to be a
+    consortium rather than a project.</p>
+  <div class="script">
+    <div class="shead">
+      <span class="clock">2:36</span>
+      <span class="stitle">The full arc</span>
+      <span class="swords">339 words</span>
+    </div>
+    <div class="sbody">
+      <p class="beat"><b>Frame</b></p>
+      <p class="line">When people say AI and the grid, they mean data centres. I work on the other one —
+        the AI <b>inside</b> the utility. Vegetation management, outage detection, load forecasting,
+        inspections. It's already running, and most of it was never assessed as AI at all, because it
+        arrived as a feature of something the utility bought.</p>
+
+      <p class="beat"><b>Case</b></p>
+      <p class="line">Here's a system that makes the point. A utility flies twelve thousand circuit
+        miles of distribution line every year with LiDAR. A vendor's vision model reads the imagery,
+        decides which spans have trees too close to the conductor, and writes the work orders straight
+        into the work management system. A planner reviews the queue, crews go cut. Three years in
+        production. Ninety-four percent recall. No AI-attributed incidents.</p>
+
+      <p class="beat"><b>Method</b>how it runs</p>
+      <p class="line">Running that through what we're building takes about three and a half hours of the
+        utility's own people. Software pre-fills what it can from documents they already have — the
+        vendor's model card, the contract, the operating procedure — and, more usefully, <b>flags what's
+        missing.</b></p>
+
+      <p class="beat"><b>Turn 1</b>the envelope</p>
+      <p class="line">Two things came out. <span class="pz"></span> First: nobody had ever written down
+        the conditions under which that model is claimed to work. When they did — leaf-on season, slope
+        under twenty-five degrees, species it was trained on — <b>seventeen percent of assessed spans
+        fell outside it.</b> Steep terrain, post-fire regrowth. Auto-processed anyway. For three
+        years.</p>
+
+      <p class="beat"><b>Turn 2</b>unverifiable</p>
+      <p class="line">Second: the ninety-four percent couldn't be checked. The system has a record of
+        every tree it flagged. It has no mechanism at all for a tree it <b>missed.</b></p>
+
+      <p class="beat"><b>Absolve</b>no villain</p>
+      <p class="line"><b>Nobody did anything wrong.</b> The boundary had simply never been written down,
+        so there was nothing to be outside of.</p>
+
+      <p class="beat"><b>Resolve</b>what changed</p>
+      <p class="line">They didn't switch it off. They restricted automatic work orders to the spans
+        inside the envelope, routed the rest to manual patrol, started sampling unflagged spans to
+        actually measure misses, and sent the vendor five specific evidence requests.</p>
+
+      <p class="beat"><b>Scale</b>why twenty-five</p>
+      <p class="line">And that's why it's twenty-five utilities and not one. <span class="pz"></span>
+        Those five requests are now the same five every member sends. <b>That moves the market.</b></p>
+    </div>
+  </div>
+</section>
+
+<section id="s6">
+  <p class="snum">06 · Delivery</p>
+  <h2>How to say it</h2>
+  <div class="cards two">
+    <div class="card"><p class="tag">Do</p><h5>Stop after &ldquo;clean record&rdquo;</h5>
+      <p>A full beat. You are setting a trap and the pause is what makes the listener commit to the
+        comfortable reading before you turn it over.</p></div>
+    <div class="card"><p class="tag">Do</p><h5>Slow down on &ldquo;nobody did anything wrong&rdquo;</h5>
+      <p>Half your normal pace. It is the line that converts a listener from defensive to curious, and
+        it only works if it sounds deliberate rather than thrown away.</p></div>
+    <div class="card"><p class="tag">Do</p><h5>Let the concrete details do the work</h5>
+      <p>Trees. Steep ground. Burn scars. A crew with a saw. These are what make it real — far more than
+        &ldquo;computer vision model&rdquo; ever will.</p></div>
+    <div class="card"><p class="tag">Do</p><h5>End on a noun, not a mission</h5>
+      <p>&ldquo;Evidence from a vendor.&rdquo; &ldquo;Three and a half hours.&rdquo; &ldquo;The same
+        five requests.&rdquo; Concrete endings invite questions; aspirational ones invite nodding.</p></div>
+    <div class="card"><p class="tag amb">Don't</p><h5>Use a single acronym</h5>
+      <p>No SOTIF, no ODD, no UL 4600, no TEVV, no tiering rubric. Every one of them is a request that
+        your listener stop following the story and start decoding. <strong>The whole point is that the
+        story carries the concepts without naming them.</strong></p></div>
+    <div class="card"><p class="tag amb">Don't</p><h5>Open with what the program is</h5>
+      <p>&ldquo;SAFERai.power is an EPRI-led collaborative that will develop a risk framework…&rdquo;
+        loses the room in nine words. The program is the <em>last</em> thing you say, once they want to
+        know who's fixing it.</p></div>
+    <div class="card"><p class="tag amb">Don't</p><h5>Add a fourth number</h5>
+      <p>Ninety-four, seventeen, three and a half. Adding 12,400 miles is fine as colour in the longer
+        versions; adding 180,000 spans, 25 members and 2,000 hours all at once means they remember
+        none of them.</p></div>
+    <div class="card"><p class="tag amb">Don't</p><h5>Claim it's a real utility</h5>
+      <p>It's a composite built from patterns common to vegetation programs. Say <strong>&ldquo;here's
+        the shape of it&rdquo;</strong> or &ldquo;a system like this.&rdquo; If someone asks directly,
+        answer directly — in a room full of people who run these systems, a fudge is expensive and the
+        story is just as good as an archetype.</p></div>
+  </div>
+</section>
+
+<section id="s7">
+  <p class="snum">07 · Interrupts</p>
+  <h2>When they cut in — which means it worked</h2>
+  <p class="lead">Getting interrupted is success. Have these ready at about fifteen seconds each, then
+    stop and let them steer.</p>
+
+  <div class="cards two">
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;Isn't that just model validation?&rdquo;</h5>
+      <p class="said">Validation tells you how the model scored on the vendor's test set. This asks a
+        different question — <b>under what conditions is that score claimed to hold, and how would you
+        ever find out you were outside them.</b> Most systems can answer the first and nothing answers
+        the second.</p></div>
+
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;How's this different from the data centre stuff?&rdquo;</h5>
+      <p class="said">Completely different problem. That's AI as a <b>load</b> on the grid — FERC and
+        NERC are already on it. This is AI as a <b>tool inside</b> the utility, making operational
+        decisions. Same two words, nothing else in common.</p></div>
+
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;What would you need from me?&rdquo;</h5>
+      <p class="said">Two real systems you already have running, and about eighty hours of one good
+        person's time. Not a committee seat — <b>two actual systems, with their actual gaps.</b> You
+        get the assessment on your own systems either way.</p></div>
+
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;Who else is in it?&rdquo;</h5>
+      <p class="said">About twenty-eight organisations. Most of the big investor-owned utilities, public
+        power, the market operators — and NERC. <b>Plus the technology vendors</b>, which matters,
+        because the point is agreeing what evidence they have to hand over.</p></div>
+
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;Doesn't this slow everything down?&rdquo;</h5>
+      <p class="said">It's the opposite problem. Right now people either deploy with no basis or stall
+        for months arguing. <b>Three and a half hours to a documented decision is faster than the
+        argument you're having today</b> — and it's defensible afterwards.</p></div>
+
+    <div class="card"><p class="tag">They ask</p><h5>&ldquo;So what happened to that system?&rdquo;</h5>
+      <p class="said">Still running. They restricted the automatic work orders to the ground the model
+        was validated on, sent the rest to manual patrol, and started sampling the spans it
+        <b>didn't</b> flag — so for the first time they can actually measure a miss.</p></div>
+  </div>
+</section>
+
+<section id="s8">
+  <p class="snum">08 · Variants</p>
+  <h2>Same story, different last line</h2>
+  <p class="lead">Never rewrite the narrative for the audience. Change only the closing sentence — the
+    story is doing the persuading, and the last line just points it at what they own.</p>
+  <div class="cards three">
+    <div class="card"><p class="tag">CEO / board</p>
+      <p class="said">This is how you say yes to AI <b>faster</b>, and be able to explain the yes
+        afterwards.</p></div>
+    <div class="card"><p class="tag">CISO / risk</p>
+      <p class="said">You get a documented boundary and a monitoring trigger, instead of a vendor's
+        aggregate number.</p></div>
+    <div class="card"><p class="tag">Operations</p>
+      <p class="said">The crews still cut the trees. The difference is you know which spans nobody is
+        looking at.</p></div>
+    <div class="card"><p class="tag">Vendor / technology member</p>
+      <p class="said">Build the evidence package once, and it satisfies twenty-five buyers instead of
+        twenty-five questionnaires.</p></div>
+    <div class="card"><p class="tag">Regulator / NERC</p>
+      <p class="said">The sector is documenting its own failure modes before anybody has to ask it
+        to.</p></div>
+    <div class="card"><p class="tag">Prospective member</p>
+      <p class="said">Eighty hours of one person's time — and you take the whole method home and run it
+        on your own portfolio.</p></div>
+  </div>
+  <div class="note">
+    <h5>If you only remember one thing</h5>
+    <p>Open with the trees, pause after &ldquo;clean record,&rdquo; turn on <strong>&ldquo;the
+      conditions it's actually valid in,&rdquo;</strong> and slow down for <strong>&ldquo;nobody did
+      anything wrong.&rdquo;</strong> Everything else is expansion.</p>
+  </div>
+</section>
+
+<p class="colophon">
+  Spoken narrative for SAFERai.power · derived from the VMS-1 worked example. The system described is
+  an illustrative composite built from patterns common to vegetation-management AI programs, not a real
+  utility's system, vendor or performance — say so if asked directly. Timings assume roughly 130 words
+  per minute with the marked pauses.
+</p>
+
+</div>
