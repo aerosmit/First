@@ -1,0 +1,683 @@
+<title>The Standards Assistant</title>
+
+<style>
+  :root {
+    --ground:#F1F4F3; --surface:#FFFFFF; --sunken:#E5EAE8;
+    --ink:#131E1C; --ink-mid:#3D4E4A; --ink-soft:#5F706C;
+    --rule:#CED8D5; --rule-soft:#DFE6E4;
+    --accent:#0E6F63; --accent-deep:#0A544B; --accent-soft:#D5E7E3;
+    --amber:#97590F; --amber-soft:#F2E4D0; --amber-strong:#7E4A0C;
+    --shadow:0 1px 2px rgba(19,30,28,.05), 0 8px 24px -16px rgba(19,30,28,.28);
+    --lvl1:#E3A45F; --lvl2:#C97C2C; --lvl3:#A55516; --lvl4:#78320D;
+    --lvl-track:#E5EAE8;
+    --on1:#131E1C; --on2:#131E1C; --on3:#FFFFFF; --on4:#FFFFFF;
+    --sans: ui-sans-serif, "Helvetica Neue", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Hoefler Text", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0D1312; --surface:#151D1C; --sunken:#0A100F;
+      --ink:#E3EAE8; --ink-mid:#B0BFBB; --ink-soft:#8B9C97;
+      --rule:#2A3634; --rule-soft:#1E2827;
+      --accent:#4FC8B4; --accent-deep:#7FDCCB; --accent-soft:#10322D;
+      --amber:#D9A05B; --amber-soft:#2E2216; --amber-strong:#D9A05B;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+      --lvl1:#7A5227; --lvl2:#A87434; --lvl3:#D29A4F; --lvl4:#F0BC80;
+      --lvl-track:#232E2C;
+      --on1:#E3EAE8; --on2:#0D1312; --on3:#0D1312; --on4:#0D1312;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0D1312; --surface:#151D1C; --sunken:#0A100F;
+    --ink:#E3EAE8; --ink-mid:#B0BFBB; --ink-soft:#8B9C97;
+    --rule:#2A3634; --rule-soft:#1E2827;
+    --accent:#4FC8B4; --accent-deep:#7FDCCB; --accent-soft:#10322D;
+    --amber:#D9A05B; --amber-soft:#2E2216; --amber-strong:#D9A05B;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    --lvl1:#7A5227; --lvl2:#A87434; --lvl3:#D29A4F; --lvl4:#F0BC80;
+    --lvl-track:#232E2C;
+    --on1:#E3EAE8; --on2:#0D1312; --on3:#0D1312; --on4:#0D1312;
+  }
+
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+  body { margin:0; background:var(--ground); color:var(--ink);
+         font-family:var(--serif); font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:74rem; margin-inline:auto; padding:0 clamp(1.1rem,4vw,3.25rem) 6rem; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+
+  .masthead { padding:clamp(2.6rem,6vw,4.5rem) 0 0; }
+  .eyebrow { font-family:var(--mono); font-size:.69rem; letter-spacing:.16em; text-transform:uppercase;
+             color:var(--accent); margin:0 0 1.3rem; display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; }
+  .eyebrow::after { content:""; flex:1 1 3rem; height:1px; background:var(--rule); min-width:2rem; }
+  h1 { font-family:var(--sans); font-weight:760; font-size:clamp(2.1rem,5.4vw,3.5rem);
+       line-height:1.03; letter-spacing:-.033em; text-wrap:balance; margin:0 0 1.2rem; max-width:22ch; }
+  .deck { font-size:clamp(1.05rem,2vw,1.24rem); line-height:1.5; color:var(--ink-mid); max-width:62ch; margin:0 0 2.2rem; }
+  .meta { display:flex; flex-wrap:wrap; gap:0 2.4rem; border-top:1px solid var(--rule);
+          border-bottom:1px solid var(--rule); padding:1rem 0; margin-bottom:2.6rem; }
+  .meta div { padding:.35rem 0; }
+  .meta dt { font-family:var(--mono); font-size:.64rem; letter-spacing:.15em; text-transform:uppercase;
+             color:var(--ink-soft); margin:0 0 .3rem; }
+  .meta dd { margin:0; font-family:var(--sans); font-size:.92rem; font-weight:570; letter-spacing:-.006em; }
+
+  h2 { font-family:var(--sans); font-weight:720; font-size:clamp(1.45rem,3vw,1.95rem);
+       line-height:1.12; letter-spacing:-.026em; text-wrap:balance; margin:0 0 1.1rem; max-width:26ch; }
+  h3 { font-family:var(--sans); font-weight:660; font-size:1.08rem; line-height:1.28;
+       letter-spacing:-.013em; margin:2.4rem 0 .8rem; max-width:48ch; }
+  p, ul, ol { max-width:66ch; }
+  p { margin:0 0 1.1rem; }
+  ul { margin:0 0 1.2rem; padding-left:1.2rem; }
+  li { margin-bottom:.45rem; padding-left:.2rem; }
+  li::marker { color:var(--accent); }
+  strong { font-weight:640; color:var(--ink); }
+  em.q { font-style:italic; }
+  code { font-family:var(--mono); font-size:.855em; background:var(--sunken); padding:.1em .38em;
+         border-radius:2px; color:var(--ink-mid); }
+  .lead { font-size:1.08rem; color:var(--ink-mid); max-width:64ch; }
+
+  .note { border-left:2px solid var(--accent); background:var(--accent-soft);
+          padding:1.1rem 1.3rem; margin:1.7rem 0; max-width:66ch; }
+  .note > :last-child { margin-bottom:0; }
+  .note p { font-size:.95rem; }
+  .note.warn { border-left-color:var(--amber); background:var(--amber-soft); }
+  .note.warn strong { color:var(--amber-strong); }
+  .note.plain { border-left-color:var(--rule); background:var(--sunken); }
+  .note h5 { font-family:var(--mono); font-size:.65rem; letter-spacing:.13em; text-transform:uppercase;
+             color:var(--accent); margin:0 0 .5rem; font-weight:620; }
+  .note.warn h5 { color:var(--amber-strong); }
+  .note.plain h5 { color:var(--ink-soft); }
+
+  /* pipeline */
+  .pipeline { display:grid; grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr)); gap:1px;
+              background:var(--rule-soft); border:1px solid var(--rule-soft); margin:0 0 3rem; }
+  .pl { background:var(--surface); padding:.95rem 1rem 1.05rem; display:flex; flex-direction:column; gap:.3rem; }
+  .pl.ag { background:var(--sunken); }
+  .pl-n { font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; color:var(--accent); }
+  .pl-t { font-family:var(--sans); font-size:.85rem; font-weight:620; letter-spacing:-.012em; line-height:1.25; }
+  .pl-a { font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase;
+          color:var(--ink-soft); margin-top:.1rem; }
+
+  /* stage */
+  .stage { border-top:2px solid var(--accent); padding-top:1rem; margin:0 0 3.4rem; }
+  .stage-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem 1.2rem; margin-bottom:1rem; }
+  .stage-n { font-family:var(--mono); font-weight:620; font-size:1.5rem; color:var(--accent);
+             letter-spacing:-.02em; line-height:1; }
+  .stage-t { font-family:var(--sans); font-weight:700; font-size:1.35rem; letter-spacing:-.022em; }
+  .stage-m { font-family:var(--mono); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase;
+             color:var(--ink-soft); margin-left:auto; }
+
+  /* cards */
+  .cards { display:grid; gap:1px; background:var(--rule-soft); border:1px solid var(--rule-soft); margin:1.6rem 0 2rem; }
+  @media (min-width:52rem) {
+    .cards.two { grid-template-columns:repeat(2,1fr); }
+    .cards.three { grid-template-columns:repeat(3,1fr); }
+    .cards.four { grid-template-columns:repeat(4,1fr); }
+  }
+  .card { background:var(--surface); padding:1.2rem 1.3rem 1.35rem; }
+  .card h5 { font-family:var(--sans); font-weight:670; font-size:1rem; letter-spacing:-.014em;
+             line-height:1.25; margin:0 0 .5rem; }
+  .card p { font-size:.885rem; line-height:1.5; margin:0 0 .7rem; color:var(--ink-mid); max-width:none; }
+  .card p:last-child { margin-bottom:0; }
+  .card .tag { font-family:var(--mono); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+               color:var(--accent); margin:0 0 .45rem; }
+  .card .tag.amb { color:var(--amber-strong); }
+  .card.gap { background:var(--amber-soft); }
+  .card.tint { background:var(--accent-soft); }
+  .card ul { font-size:.875rem; line-height:1.48; margin:0; max-width:none; padding-left:1.05rem; }
+  .card ul li { margin-bottom:.3rem; }
+  .src { font-family:var(--mono); font-size:.65rem; letter-spacing:.06em; color:var(--ink-soft); }
+
+  /* tables */
+  .scroller { overflow-x:auto; border:1px solid var(--rule); background:var(--surface); margin:1.6rem 0 2.1rem; }
+  table { border-collapse:collapse; width:100%; min-width:34rem; font-family:var(--sans);
+          font-size:.875rem; line-height:1.48; }
+  th { font-family:var(--mono); font-weight:500; font-size:.655rem; letter-spacing:.13em; text-transform:uppercase;
+       color:var(--ink-soft); text-align:left; padding:.85rem 1rem; background:var(--sunken);
+       border-bottom:1px solid var(--rule); vertical-align:bottom; }
+  td { padding:.8rem 1rem; border-bottom:1px solid var(--rule-soft); vertical-align:top; color:var(--ink-mid); }
+  tbody tr:last-child td { border-bottom:none; }
+  td.k { color:var(--ink); font-weight:620; }
+  td.mono { font-family:var(--mono); font-size:.78rem; }
+
+  /* chips + meter */
+  .chip { display:inline-block; font-family:var(--mono); font-size:.68rem; letter-spacing:.08em;
+          padding:.2rem .5rem; background:var(--sunken); color:var(--ink-mid); border-radius:2px; }
+  .chip.acc { background:var(--accent-soft); color:var(--accent-deep); }
+  .chip.amb { background:var(--amber-soft); color:var(--amber-strong); }
+  .chip.l1 { background:var(--lvl1); color:var(--on1); }
+  .chip.l2 { background:var(--lvl2); color:var(--on2); }
+  .chip.l3 { background:var(--lvl3); color:var(--on3); }
+  .chip.l4 { background:var(--lvl4); color:var(--on4); }
+  .meter { display:flex; gap:.2rem; margin:.5rem 0 .6rem; }
+  .meter i { display:block; width:1.6rem; height:.45rem; background:var(--lvl-track); }
+  .meter[data-lvl="1"] i:nth-child(-n+1) { background:var(--lvl1); }
+  .meter[data-lvl="2"] i:nth-child(-n+2) { background:var(--lvl2); }
+  .meter[data-lvl="3"] i:nth-child(-n+3) { background:var(--lvl3); }
+  .meter[data-lvl="4"] i:nth-child(-n+4) { background:var(--lvl4); }
+
+  /* stat */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(11rem,1fr)); gap:1px;
+           background:var(--rule-soft); border:1px solid var(--rule-soft); margin:1.6rem 0 2.2rem; }
+  .stat { background:var(--surface); padding:1.1rem 1.2rem 1.25rem; }
+  .stat b { display:block; font-family:var(--sans); font-weight:770; font-size:2.1rem; letter-spacing:-.035em;
+            line-height:1; color:var(--accent); margin-bottom:.4rem; font-variant-numeric:tabular-nums; }
+  .stat span { display:block; font-size:.855rem; line-height:1.4; color:var(--ink-mid); }
+
+  /* figure */
+  figure { margin:2rem 0 2.3rem; }
+  .figbox { border:1px solid var(--rule); background:var(--surface); padding:1.4rem; overflow-x:auto; }
+  figure svg { width:100%; height:auto; display:block; color:var(--ink-mid); }
+  figcaption { font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; color:var(--ink-soft);
+               line-height:1.5; margin-top:.8rem; max-width:64ch; }
+
+  .colophon { border-top:1px solid var(--rule); margin-top:3rem; padding-top:1.2rem;
+              font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; color:var(--ink-soft);
+              line-height:1.7; max-width:70ch; }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">SAFERai.power · Worked example · Generative AI</p>
+  <h1>The assistant that quoted the wrong revision</h1>
+  <p class="deck">An internal LLM assistant over a utility's own engineering standards goes through
+    intake, agent pre-fill, tiering, gap-closing, red team and ratification — showing the artifact
+    produced at each step, and the two framework changes that came out of one member filling in a
+    template.</p>
+  <dl class="meta">
+    <div><dt>System</dt><dd>ASK-1 · engineering standards assistant</dd></div>
+    <div><dt>Initial tier</dt><dd>Tier 2 (member) → disputed</dd></div>
+    <div><dt>Member time</dt><dd>3 hrs 30 min</dd></div>
+    <div><dt>Elapsed</dt><dd>5 working days</dd></div>
+    <div><dt>Outcome</dt><dd>Corpus restriction + rubric change</dd></div>
+  </dl>
+  <div class="note plain">
+    <p><strong>Illustrative composite.</strong> ASK-1 is a hypothetical system at a hypothetical member
+      utility, built from patterns common to retrieval-grounded LLM assistants now being deployed across
+      the sector. It is not a description of any real utility's system, vendor or performance. The point
+      is the shape of the process and the form of the outputs.</p>
+  </div>
+</header>
+
+<h2>The system</h2>
+<p class="lead">A large investor-owned utility, about 2.5 million customers. Eighteen months ago it
+  deployed a vendor's retrieval-grounded generative-AI assistant over its own document estate —
+  engineering standards, construction specifications, operating procedures, safety manuals and materials
+  catalogs. Roughly <strong>40,000 documents</strong> indexed.</p>
+<p>Staff ask questions in plain language and get an answer with citations back to the source document
+  and section. It is available to about <strong>6,000 people</strong> — engineers, designers, planners,
+  field supervisors and contractors — and handles roughly <strong>8,000 questions a week</strong>.</p>
+<p>It was procured by IT as a productivity tool, under an existing enterprise software agreement. It has
+  no write access to any system of record. <strong>It has never been reviewed as an operational system,
+  because on paper it does not operate anything — it answers questions.</strong></p>
+
+<div class="stats">
+  <div class="stat"><b>96%</b><span>vendor-reported answer accuracy on a 500-question evaluation set</span></div>
+  <div class="stat"><b>94%</b><span>of rated answers received a thumbs-up in the product</span></div>
+  <div class="stat"><b>18 mo</b><span>in production with zero logged incidents</span></div>
+  <div class="stat"><b>6,000</b><span>staff and contractors with access</span></div>
+</div>
+
+<p>It is a good example precisely because <strong>the tier is not obvious</strong>. The system takes no
+  action, holds no write permission, and every answer carries a citation the user is told to check. And
+  yet it is the single largest channel through which this utility's engineering guidance now reaches the
+  people doing the work.</p>
+
+<div class="pipeline">
+  <div class="pl"><span class="pl-n">00</span><span class="pl-t">Intake</span><span class="pl-a">Member · 10m</span></div>
+  <div class="pl ag"><span class="pl-n">01</span><span class="pl-t">Agent pre-fill</span><span class="pl-a">Agent · 2h</span></div>
+  <div class="pl"><span class="pl-n">02</span><span class="pl-t">Human tiering</span><span class="pl-a">Member · 40m</span></div>
+  <div class="pl ag"><span class="pl-n">03</span><span class="pl-t">Copilot 2nd opinion</span><span class="pl-a">Agent · 4m</span></div>
+  <div class="pl"><span class="pl-n">04</span><span class="pl-t">Close the gaps</span><span class="pl-a">Member · 75m</span></div>
+  <div class="pl ag"><span class="pl-n">05</span><span class="pl-t">Agent red team</span><span class="pl-a">Agent · 20m</span></div>
+  <div class="pl"><span class="pl-n">06</span><span class="pl-t">Cross-member review</span><span class="pl-a">Peer · 60m</span></div>
+  <div class="pl"><span class="pl-n">07</span><span class="pl-t">Ratify &amp; publish</span><span class="pl-a">Pod · 15m</span></div>
+</div>
+
+<!-- ─────────────── 00 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">00</span><span class="stage-t">Intake</span>
+    <span class="stage-m">Member · Day 1 · 10 minutes</span></div>
+  <p>Three sentences and pointers to documents that already exist. Intake is deliberately trivial —
+    anything heavier and members nominate their easiest system instead of their most interesting one.</p>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td class="k" style="width:24%">What it does</td>
+          <td>Answers staff questions about internal engineering standards, specifications and operating
+            procedures, in natural language, with citations to source documents.</td></tr>
+        <tr><td class="k">Who acts on it</td>
+          <td>Engineers, designers, planners, field supervisors and contractors — about 6,000 people.
+            No downstream system consumes the output; a person reads it.</td></tr>
+        <tr><td class="k">Why nominated</td>
+          <td>In production 18 months. Procured as a productivity tool. Nobody has ever assessed it as an
+            AI system.</td></tr>
+        <tr><td class="k">Documents available</td>
+          <td class="mono">Vendor model card · enterprise software agreement + SOW · security
+            questionnaire · SSO/integration spec · rollout comms &amp; acceptable-use notice · 18 months
+            of usage telemetry</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────── 01 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">01</span><span class="stage-t">Agent pre-fill</span>
+    <span class="stage-m">Risk File Drafter · Day 1–2 · ~2 hrs unattended</span></div>
+  <p>The Drafter ingests the six sources and populates what it can. Its binding guardrail does the real
+    work: <strong>no field is populated without a source, and a gap is marked as a gap rather than
+    inferred.</strong> Seven fields come back sourced. The four it refuses to fill are the product.</p>
+
+  <h3>Seven fields, each with a source</h3>
+  <div class="cards three">
+    <div class="card"><p class="tag">Purpose &amp; intended use</p>
+      <p>Answer staff questions about internal engineering and operating documents, with citations.
+        <span class="src">SOW §1.2</span></p></div>
+    <div class="card"><p class="tag">Capabilities &amp; limits</p>
+      <p>Vendor reports 96% answer accuracy on a 500-question internal evaluation set.
+        <span class="src">vendor eval report v2</span></p></div>
+    <div class="card"><p class="tag">Data provenance</p>
+      <p>Index built nightly from three SharePoint repositories plus the document management system.
+        <span class="src">integration spec §3</span></p></div>
+    <div class="card"><p class="tag">Human oversight</p>
+      <p>Answers carry citations; users are instructed to verify against the source document.
+        <span class="src">acceptable-use notice, rollout comms</span></p></div>
+    <div class="card"><p class="tag">Deployment conditions</p>
+      <p>Vendor SaaS, SSO, tenant-isolated. No write access to any system of record.
+        <span class="src">security questionnaire</span></p></div>
+    <div class="card"><p class="tag">Guardrails in place</p>
+      <p>Content filter, PII redaction on input, full session logging.
+        <span class="src">vendor security documentation</span></p></div>
+    <div class="card" style="grid-column:1/-1"><p class="tag">Incident history</p>
+      <p>No AI-attributed incidents logged. <strong>Note appended by the agent: the ITSM system has no
+        category under which a wrong answer could be recorded.</strong>
+        <span class="src">ITSM export, 18 months</span></p></div>
+  </div>
+
+  <h3>Four fields it refused to fill</h3>
+  <div class="cards two">
+    <div class="card gap"><p class="tag amb">Gap · Operating envelope</p>
+      <p>No document defines which question types the system is valid for, which parts of the corpus are
+        authoritative, or what it should decline to answer. The vendor benchmark is aggregate — not
+        stratified by document class, question type, or whether the retrieved document is current.</p></div>
+    <div class="card gap"><p class="tag amb">Gap · TEVV performed</p>
+      <p>Vendor internal evaluation only, on the vendor's own 500-question set. None of those questions
+        came from this utility's corpus. No test of retrieval currency, no adversarial testing, no
+        stratified accuracy.</p></div>
+    <div class="card gap"><p class="tag amb">Gap · Change envelope</p>
+      <p>The agreement permits the vendor to change the underlying model, the retrieval configuration and
+        the system prompt without notice. <strong>The foundation model was changed twice and the system
+        prompt four times in 18 months.</strong> The 96% predates all six changes.</p></div>
+    <div class="card gap"><p class="tag amb">Gap · Monitoring plan</p>
+      <p>Thumbs-up and thumbs-down are captured. <strong>Nothing connects an answer to what the person
+        did next.</strong> An answer that is confidently wrong in a way the asker cannot detect receives
+        a thumbs-up like any other.</p></div>
+  </div>
+
+  <div class="note warn">
+    <h5>The observation that made the exercise worth doing</h5>
+    <p>The system reports 96% accuracy and a 94% satisfaction rate, and has a clean incident log.
+      <strong>None of those three numbers is evidence that the answers are correct.</strong> The first
+      describes a configuration that no longer exists. The second measures whether an answer was
+      satisfying. The third records a category of event the ticketing system cannot express.</p>
+  </div>
+</section>
+
+<!-- ─────────────── 02 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">02</span><span class="stage-t">Human tiering</span>
+    <span class="stage-m">IT product owner + engineering standards lead · Day 3 · 40 minutes</span></div>
+  <p>Two people score the four rubric dimensions <strong>before seeing any agent opinion.</strong> That
+    ordering is a hard rule — it is what keeps the calibration data meaningful.</p>
+  <div class="cards four">
+    <div class="card"><p class="tag">Consequence</p>
+      <p><span class="chip l2">2 · Moderate</span></p>
+      <div class="meter" data-lvl="2" role="img" aria-label="Level 2 of 4"><i></i><i></i><i></i><i></i></div>
+      <p>A wrong answer causes rework or a design error caught in review.</p></div>
+    <div class="card"><p class="tag">Autonomy</p>
+      <p><span class="chip l2">2 · Moderate</span></p>
+      <div class="meter" data-lvl="2" role="img" aria-label="Level 2 of 4"><i></i><i></i><i></i><i></i></div>
+      <p>Advisory only. The system takes no action; a person reads the answer and the citation.</p></div>
+    <div class="card"><p class="tag">Operating context</p>
+      <p><span class="chip l2">2 · Moderate</span></p>
+      <div class="meter" data-lvl="2" role="img" aria-label="Level 2 of 4"><i></i><i></i><i></i><i></i></div>
+      <p>IT system, no write access to any system of record, fully reversible.</p></div>
+    <div class="card"><p class="tag">Exposure</p>
+      <p><span class="chip l4">4 · Critical</span></p>
+      <div class="meter" data-lvl="4" role="img" aria-label="Level 4 of 4"><i></i><i></i><i></i><i></i></div>
+      <p>6,000 staff and contractors; ~8,000 questions a week across every engineering discipline.</p></div>
+  </div>
+  <p>The member's composite call: <strong>TIER 2</strong> — reasoning that the system is advisory, holds
+    no permissions, and every answer is delivered with a citation the user is instructed to verify.</p>
+</section>
+
+<!-- ─────────────── 03 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">03</span><span class="stage-t">Tiering Copilot — second opinion</span>
+    <span class="stage-m">Agent · Day 3 · 4 minutes</span></div>
+  <p>Now, and only now, the Copilot runs. It concurs on two dimensions and disputes two.</p>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td class="k" style="width:16%">Agreement</td>
+          <td>Operating context 2, Exposure 4 — concur with member scoring.</td></tr>
+        <tr><td class="k">Dispute 1</td>
+          <td><strong>Consequence: proposes 4, not 2.</strong> The indexed corpus includes
+            safety-classified procedures — grounding, clearance, switching and confined-space entry.
+            A wrong answer drawn from those documents is not rework. Nothing in the deployment
+            distinguishes them from the materials catalog.</td></tr>
+        <tr><td class="k">Dispute 2</td>
+          <td><strong>Autonomy: proposes 3, not 2.</strong> The stated control is that users verify each
+            answer against the cited source. Session telemetry shows the median interval between an
+            answer being displayed and the session ending is <strong>19 seconds</strong> — less than the
+            time required to open the cited document and locate the section. The documented control is
+            verification; the observed behaviour is acceptance.</td></tr>
+        <tr><td class="k">Basis</td>
+          <td class="mono">Corpus inventory from integration spec §3; session telemetry, 18-month export;
+            no verification-rate assumption stated in any reviewed document.</td></tr>
+        <tr><td class="k">Status</td>
+          <td><span class="chip">Advisory</span> Cannot change the tier. Routed to the member for
+            response.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The member accepts the consequence argument and revises Consequence to 4. It declines to change
+    Autonomy, and records why. <strong>The remaining disagreement is preserved rather than
+    resolved</strong> — it travels with the file into cross-member review.</p>
+</section>
+
+<!-- ─────────────── 04 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">04</span><span class="stage-t">Closing the gaps</span>
+    <span class="stage-m">Standards lead + IT product owner · Day 4 · 75 minutes</span></div>
+  <p>The four gaps are the member's actual work. Two of them — the Operating Envelope and the Change
+    Envelope — are fields no utility has written before, and this is where the example earns its keep.</p>
+
+  <h3>Operating envelope</h3>
+  <div class="cards two">
+    <div class="card tint"><p class="tag">Valid — answer directly with citation</p>
+      <ul>
+        <li>Questions answerable from materials catalogs, design standards and construction
+          specifications</li>
+        <li>Only where every retrieved document is a <strong>current controlled revision</strong></li>
+        <li>Question types: lookup, definition, comparison, &ldquo;which document covers…&rdquo;</li>
+        <li>Answer must name the document, revision and section</li>
+      </ul></div>
+    <div class="card gap"><p class="tag amb">Out of envelope — refuse and route</p>
+      <ul>
+        <li>Anything drawing on <strong>safety-classified procedures</strong> — grounding, clearance,
+          switching, confined space → hard link to the controlled document, no synthesized answer</li>
+        <li>Any question whose retrieval set contains a superseded revision</li>
+        <li>Regulatory or tariff interpretation</li>
+        <li>Any document not under formal document control</li>
+      </ul></div>
+  </div>
+
+  <div class="note warn">
+    <h5>Writing the envelope produced the finding of the whole exercise</h5>
+    <p>The envelope required a statement of what was actually indexed. Nobody had ever reconciled the
+      three SharePoint repositories against the document management system. When they did, they found
+      that <strong>about 3,600 of the roughly 40,000 indexed documents — one in eleven — were superseded
+      revisions</strong> that had been replaced but never removed from the source folders.</p>
+    <p>The assistant had been citing them exactly as instructed: by document number, revision and
+      section. Correctly. <strong>One withdrawn construction standard had been cited in 412 answers —
+      and it had been withdrawn twenty-two months before the assistant went live.</strong></p>
+    <p>Nobody had done anything wrong. The index was built from the folders where the documents lived,
+      and no one had ever been asked which revision the assistant was allowed to quote.</p>
+  </div>
+
+  <h3>Change envelope</h3>
+  <p>Borrowed directly from the FDA's predetermined change control plan pattern: pre-authorize the
+    envelope of change, so routine vendor updates do not each trigger a fresh review — and so the ones
+    that matter cannot pass silently.</p>
+  <div class="cards three">
+    <div class="card tint"><p class="tag">May change with no reassessment</p>
+      <ul>
+        <li>Nightly index refresh within the controlled corpus</li>
+        <li>Adding documents already under document control with a current-revision flag</li>
+        <li>User-interface changes</li>
+      </ul></div>
+    <div class="card"><p class="tag">Requires pod review — 30 days</p>
+      <ul>
+        <li>Retrieval configuration change — chunking, ranking, top-k</li>
+        <li>System prompt change</li>
+        <li>Adding a new document class to the corpus</li>
+        <li>Expanding the user population to a new function</li>
+      </ul></div>
+    <div class="card gap"><p class="tag amb">Requires full reassessment</p>
+      <ul>
+        <li><strong>Any change of the underlying foundation model or model version</strong></li>
+        <li>Any grant of write access to a system of record</li>
+        <li>Enabling tool use or agentic actions</li>
+        <li>Removing the safety-content refusal</li>
+      </ul></div>
+  </div>
+  <div class="note">
+    <p>Before this field existed, the enterprise agreement governed model change — and it permitted the
+      vendor to swap the underlying model with no notice and no revalidation. <strong>Six such changes
+      had already occurred.</strong> The change envelope is what converts a procurement term into an
+      assurance control.</p>
+  </div>
+</section>
+
+<!-- ─────────────── 05 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">05</span><span class="stage-t">Agent red team</span>
+    <span class="stage-m">Red-Team agent · Day 5 · 20 min unattended</span></div>
+  <p>Six findings — three substantive, three shallow. The shallow ones are exactly what the agent should
+    absorb so that human reviewers never spend a minute on them.</p>
+  <div class="cards two">
+    <div class="card gap"><p class="tag amb">Substantive</p>
+      <h5>The accuracy figure describes a system that no longer exists</h5>
+      <p>96% was measured on the vendor's own evaluation set, against a model version and system prompt
+        that have both since been replaced. No revalidation evidence exists for the configuration
+        currently in production.</p></div>
+    <div class="card gap"><p class="tag amb">Substantive</p>
+      <h5>Retrieval cannot distinguish a current revision from a superseded one</h5>
+      <p>Ranking is by semantic similarity. A superseded revision is not merely indistinguishable — it
+        may rank <em class="q">higher</em>, because withdrawn standards are often longer and more
+        explicit than the revisions that replaced them.</p></div>
+    <div class="card gap"><p class="tag amb">Substantive</p>
+      <h5>The oversight control cannot be exercised by the person assigned to it</h5>
+      <p>The only stated control is that the user verifies the answer against the cited document. That
+        user is the person who asked the question. <strong>If they were able to judge the answer's
+        correctness, they would not have needed to ask.</strong></p></div>
+    <div class="card"><p class="tag">Shallow</p>
+      <h5>Acceptable-use notice was never re-acknowledged</h5>
+      <p>Published once at rollout. Roughly 40% of current users joined after that date and have never
+        seen it.</p></div>
+    <div class="card"><p class="tag">Shallow</p>
+      <h5>No named accountable owner</h5>
+      <p>The file lists an IT product manager and a vendor customer-success contact. No individual is
+        accountable for the system's continued fitness.</p></div>
+    <div class="card"><p class="tag">Shallow</p>
+      <h5>Logs are discarded before any investigation could start</h5>
+      <p>Prompt and response pairs are retained 30 days. Any question about an answer given last quarter
+        is unanswerable.</p></div>
+  </div>
+</section>
+
+<!-- ─────────────── 06 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">06</span><span class="stage-t">Cross-member red team</span>
+    <span class="stage-m">Two peer utilities · Week 12 · 60 min each</span></div>
+  <p>Two other members are assigned the file and asked the single question the whole programme turns on:
+    <strong>would you deploy this in your territory on this evidence?</strong></p>
+  <div class="cards three">
+    <div class="card"><p><span class="chip l2">TIER 2</span></p>
+      <p class="tag">Nominating member</p>
+      <p style="font-size:1rem"><em class="q">&ldquo;It is an advisory tool with no permissions. Every
+        answer carries a citation, and the user is instructed to check it.&rdquo;</em></p>
+      <p>Holds that a system which takes no action and writes to nothing cannot be more than moderately
+        autonomous, whatever the volume.</p></div>
+    <div class="card"><p><span class="chip l4">TIER 4</span></p>
+      <p class="tag">Reviewing member B</p>
+      <p style="font-size:1rem"><em class="q">&ldquo;The only person checking the answer is the person
+        who asked. If they could tell it was wrong, they wouldn't have asked.&rdquo;</em></p>
+      <p>Holds that oversight performed by the requester is not oversight at all, and that a system
+        answering grounding and clearance questions for 6,000 people is operating unsupervised.</p></div>
+    <div class="card"><p><span class="chip l3">TIER 3</span></p>
+      <p class="tag">Reviewing member C</p>
+      <p style="font-size:1rem"><em class="q">&ldquo;Tier 3 if the safety-classified corpus is carved out
+        and refused. Tier 4 if it stays in.&rdquo;</em></p>
+      <p>Makes the tier contingent on a design change rather than on documentation — the first time in
+        the corpus a reviewer has tiered a system conditionally on what it is <em class="q">not</em>
+        allowed to answer.</p></div>
+  </div>
+  <div class="note warn">
+    <h5>The disagreement is the deliverable</h5>
+    <p>Three utilities, three defensible readings of the same rubric against the same evidence. Under the
+      old model this would be smoothed into consensus language in a working session. Here it is the most
+      valuable output of the file, because it exposes a hole the rubric did not previously have language
+      for: <strong>the rubric assumed that a human in the loop is a human who can check.</strong></p>
+  </div>
+</section>
+
+<!-- ─────────────── 07 ─────────────── -->
+<section class="stage">
+  <div class="stage-head"><span class="stage-n">07</span><span class="stage-t">Ratify and publish</span>
+    <span class="stage-m">Pod A + Pod B · Week 13 · 15 min member time</span></div>
+  <p>Four things leave this file, and only the first belongs to the nominating member.</p>
+
+  <h3>1 · The member's own decision</h3>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td class="k" style="width:22%">Continue?</td>
+          <td><strong>Yes — with conditions.</strong> The system stays in production.</td></tr>
+        <tr><td class="k">Restriction</td>
+          <td>Safety-classified content is refused. The assistant returns a direct link to the controlled
+            document and declines to synthesize an answer.</td></tr>
+        <tr><td class="k">New control</td>
+          <td>Index restricted to current controlled revisions. A nightly currency check quarantines any
+            document whose revision does not match the document management system.</td></tr>
+        <tr><td class="k">New control</td>
+          <td>Monthly sample of 100 answers scored against ground truth by a qualified engineer —
+            <strong>the first mechanism capable of detecting a wrong answer nobody complained
+            about.</strong></td></tr>
+        <tr><td class="k">Vendor action</td>
+          <td>Evidence request issued, 60-day response window.</td></tr>
+        <tr><td class="k">Reassessment</td>
+          <td>On the first sampling result, or on any change to model, prompt or retrieval configuration,
+            whichever comes first.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2 · The vendor evidence request</h3>
+  <p>Five specific asks — <strong>the same five any of the 25 members would now send</strong>, which is
+    the point.</p>
+  <ul>
+    <li>Accuracy stratified by document class and question type, measured on <em class="q">this</em>
+      utility's corpus rather than the vendor's evaluation set</li>
+    <li>A change log for model version, system prompt and retrieval configuration since deployment, with
+      revalidation evidence for each change</li>
+    <li>Contractual notice and revalidation rights <strong>before</strong> any future model or prompt
+      change</li>
+    <li>Documented retrieval behaviour when the corpus contains multiple revisions of the same document,
+      and the ability to filter retrieval by revision status</li>
+    <li>A supported mechanism to associate an answer with the action taken, and to retain prompt and
+      response pairs for a period the utility specifies</li>
+  </ul>
+
+  <h3>3 · The registry entry</h3>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td class="k" style="width:26%">Registry · AI-0207</td>
+          <td>ASK-1 · engineering standards assistant · <span class="chip l3">TIER 3</span>
+            <span class="chip amb">Conditional</span></td></tr>
+        <tr><td class="k">Tier</td>
+          <td>3 — <strong>conditional</strong> on the safety-content refusal and the currency check.
+            Dissenting positions (Tier 2 and Tier 4) recorded and linked.</td></tr>
+        <tr><td class="k">Autonomy</td>
+          <td>Advisory, requester-reviewed — <strong>flagged as oversight without independence</strong></td></tr>
+        <tr><td class="k">Envelope status</td>
+          <td>Declared · corpus now restricted to current controlled revisions</td></tr>
+        <tr><td class="k">Evidence completeness</td>
+          <td>7 of 11 fields fully evidenced; 4 pending vendor response</td></tr>
+        <tr><td class="k">Provenance</td>
+          <td>Agent-drafted, member-ratified — <span class="chip">tagged for calibration analysis</span></td></tr>
+        <tr><td class="k">Next trigger</td>
+          <td>First monthly sampling result, or any model / prompt / retrieval change</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4 · What the sector got</h3>
+  <p>Two framework changes, sourced from one file, that now apply to all 25 members.</p>
+  <div class="cards two">
+    <div class="card tint"><p class="tag">Pod A · new rubric sub-criterion</p>
+      <h5>Independence of the reviewer</h5>
+      <p>Autonomy scoring now asks whether the human check is performed by someone <strong>independent of
+        the person who requested the output.</strong> An assistant reviewed only by the requester has no
+        oversight layer, and scores as if unsupervised — regardless of how prominently the citation is
+        displayed.</p>
+      <p>This applies to every copilot and every assistant in the sector, not to this system.</p></div>
+    <div class="card tint"><p class="tag">Pod B · new required risk-file field</p>
+      <h5>Corpus provenance and currency</h5>
+      <p>Any retrieval-grounded system must state what is indexed, at what revision, under whose document
+        control, and <strong>how staleness is detected.</strong></p>
+      <p>&ldquo;We index a shared drive&rdquo; is an acceptable answer to the question — and an automatic
+        escalation.</p></div>
+  </div>
+  <div class="note">
+    <p><strong>Neither change was anybody's idea in a working session.</strong> Both fell out of one
+      member trying to fill in a template about a system they had run for eighteen months without
+      incident.</p>
+  </div>
+</section>
+
+<!-- ─────────────── cost ─────────────── -->
+<h2>What it cost</h2>
+<div class="stats">
+  <div class="stat"><b>3:30</b><span>total member time across all eight stages</span></div>
+  <div class="stat"><b>~2.5 h</b><span>unattended agent time</span></div>
+  <div class="stat"><b>~14 h</b><span>the same file drafted from a blank template</span></div>
+</div>
+<div class="scroller">
+  <table>
+    <thead><tr><th style="width:18%">Stage</th><th style="width:12%">Actor</th><th style="width:14%">Member min</th><th>What the time bought</th></tr></thead>
+    <tbody>
+      <tr><td class="k">00 Intake</td><td class="mono">Member</td><td class="mono">10</td><td>Nomination and document pointers</td></tr>
+      <tr><td class="k">01 Pre-fill</td><td class="mono">Agent</td><td class="mono">0</td><td>7 fields sourced, 4 gaps identified</td></tr>
+      <tr><td class="k">02 Tiering</td><td class="mono">Member</td><td class="mono">40</td><td>Independent scores on 4 dimensions</td></tr>
+      <tr><td class="k">03 Second opinion</td><td class="mono">Agent</td><td class="mono">0</td><td>The consequence and autonomy disputes</td></tr>
+      <tr><td class="k">04 Close gaps</td><td class="mono">Member</td><td class="mono">75</td><td>Both envelopes — and the superseded-revision discovery</td></tr>
+      <tr><td class="k">05 Agent red team</td><td class="mono">Agent</td><td class="mono">20</td><td>3 substantive findings; 3 shallow ones absorbed</td></tr>
+      <tr><td class="k">06 Cross-member</td><td class="mono">Peers</td><td class="mono">60</td><td>The three-way tier disagreement</td></tr>
+      <tr><td class="k">07 Ratify</td><td class="mono">Pod</td><td class="mono">15</td><td>Registry entry + 2 framework changes</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>At two files per member, the difference between three and a half hours and fourteen is what funds the
+  tripled judgment reserve.</p>
+
+<h2>What to take from this</h2>
+<p class="lead"><strong>Three impressive numbers, none of which was evidence.</strong> 96% described a
+  configuration that had been replaced six times. 94% measured whether an answer was satisfying, not
+  whether it was right. Zero incidents recorded a category the ticketing system could not express.</p>
+<div class="cards two">
+  <div class="card"><h5>The generative-AI failure mode is confident correctness of form</h5>
+    <p>The assistant did not hallucinate. It cited real documents, by real number and section, with real
+      content. <strong>Every check a reader would perform passes.</strong> The document was simply no
+      longer the one in force — which is not a property the model can observe, and not one that any
+      accuracy benchmark measures.</p></div>
+  <div class="card"><h5>The human in the loop has to be a human who can check</h5>
+    <p>Every deployment of this shape claims human oversight, and almost all of them assign it to the
+      person who asked the question. <strong>That is the assumption the rubric had never examined</strong>,
+      and it is the one most likely to be wrong across the whole sector.</p></div>
+</div>
+
+<p class="colophon">
+  SAFERai.power worked example · generative AI · companion to the VMS-1 vegetation-management example.
+  ASK-1 is an illustrative composite built from patterns common to retrieval-grounded LLM assistants in
+  utility deployment — not a description of any real utility's system, vendor or performance. Figures are
+  illustrative and internally consistent, not measured. The process, the artifacts and the framework
+  changes are the point.
+</p>
+
+</div>
